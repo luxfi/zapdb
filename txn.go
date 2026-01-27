@@ -17,7 +17,7 @@ import (
 	"sync"
 	"sync/atomic"
 
-	"github.com/dgraph-io/badger/v4/y"
+	"github.com/luxfi/badger/v4/y"
 	"github.com/dgraph-io/ristretto/v2/z"
 )
 

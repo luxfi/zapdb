@@ -18,9 +18,9 @@ import (
 	"github.com/spf13/cobra"
 	"google.golang.org/protobuf/proto"
 
-	"github.com/dgraph-io/badger/v4"
-	"github.com/dgraph-io/badger/v4/pb"
-	"github.com/dgraph-io/badger/v4/y"
+	"github.com/luxfi/badger/v4"
+	"github.com/luxfi/badger/v4/pb"
+	"github.com/luxfi/badger/v4/y"
 	"github.com/dgraph-io/ristretto/v2/z"
 )
 
