@@ -7,7 +7,6 @@ package badger
 
 import (
 	"bytes"
-	"context"
 	"encoding/hex"
 	"errors"
 	"fmt"
@@ -20,8 +19,6 @@ import (
 	"sync/atomic"
 	"time"
 
-	"go.opentelemetry.io/otel"
-	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/dgraph-io/badger/v4/pb"
 	"github.com/dgraph-io/badger/v4/table"
@@ -322,19 +319,11 @@ func (s *levelsController) dropPrefixes(prefixes [][]byte) error {
 				dropPrefixes: prefixes,
 				t:            s.levelTargets(),
 			}
-			_, span := otel.Tracer("").Start(context.TODO(), "Badger.Compaction")
-			span.SetAttributes(attribute.Int("Compaction level", l.level))
-			span.SetAttributes(attribute.String("Drop Prefixes", fmt.Sprintf("%v", prefixes)))
 			cd.t.baseLevel = l.level
 			if err := s.runCompactDef(-1, l.level, cd); err != nil {
 				opt.Warningf("While running compact def: %+v. Error: %v", cd, err)
-				span.End()
 				return err
 			}
-			span.SetAttributes(
-				attribute.Int("Top tables count", len(cd.top)),
-				attribute.Int("Bottom tables count", len(cd.bot)))
-			span.End()
 		}
 
 	}
@@ -1511,8 +1500,6 @@ func (s *levelsController) doCompact(id int, p compactionPriority) error {
 		p.t = s.levelTargets()
 	}
 
-	_, span := otel.Tracer("").Start(context.TODO(), "Badger.Compaction")
-	defer span.End()
 
 	cd := compactDef{
 		compactorId:  id,
@@ -1541,16 +1528,11 @@ func (s *levelsController) doCompact(id int, p compactionPriority) error {
 	}
 	defer s.cstatus.delete(cd) // Remove the ranges from compaction status.
 
-	span.SetAttributes(attribute.String("Compaction", fmt.Sprintf("%+v", cd)))
 	if err := s.runCompactDef(id, l, cd); err != nil {
 		// This compaction couldn't be done successfully.
 		s.kv.opt.Warningf("[Compactor: %d] LOG Compact FAILED with error: %+v: %+v", id, err, cd)
 		return err
 	}
-
-	span.SetAttributes(
-		attribute.Int("Top tables count", len(cd.top)),
-		attribute.Int("Bottom tables count", len(cd.bot)))
 
 	s.kv.opt.Debugf("[Compactor: %d] Compaction for level: %d DONE", id, cd.thisLevel.level)
 	return nil
