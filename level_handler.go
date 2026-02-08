@@ -10,8 +10,8 @@ import (
 	"sort"
 	"sync"
 
-	"github.com/dgraph-io/badger/v4/table"
-	"github.com/dgraph-io/badger/v4/y"
+	"github.com/luxfi/zapdb/v4/table"
+	"github.com/luxfi/zapdb/v4/y"
 )
 
 type levelHandler struct {
