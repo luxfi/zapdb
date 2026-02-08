@@ -23,9 +23,9 @@ import (
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 
-	"github.com/dgraph-io/badger/v4/pb"
-	"github.com/dgraph-io/badger/v4/table"
-	"github.com/dgraph-io/badger/v4/y"
+	"github.com/luxfi/zapdb/v4/pb"
+	"github.com/luxfi/zapdb/v4/table"
+	"github.com/luxfi/zapdb/v4/y"
 	"github.com/dgraph-io/ristretto/v2/z"
 )
 
