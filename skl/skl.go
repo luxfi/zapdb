@@ -26,7 +26,7 @@ import (
 	"sync/atomic"
 	"unsafe"
 
-	"github.com/dgraph-io/badger/v4/y"
+	"github.com/luxfi/zapdb/v4/y"
 	"github.com/dgraph-io/ristretto/v2/z"
 )
 

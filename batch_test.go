@@ -13,7 +13,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/dgraph-io/badger/v4/y"
+	"github.com/luxfi/zapdb/v4/y"
 )
 
 func TestWriteBatch(t *testing.T) {

@@ -1,4 +1,4 @@
-module github.com/dgraph-io/badger/v4
+module github.com/luxfi/zapdb/v4
 
 go 1.23.0
 
