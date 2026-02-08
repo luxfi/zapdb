@@ -7,6 +7,7 @@ package y
 
 import (
 	"expvar"
+	"sync"
 )
 
 const (
@@ -60,39 +61,63 @@ var (
 	numCompactionTables *expvar.Int
 	// Total writes by a user in bytes
 	numBytesWrittenUser *expvar.Int
+
+	// metricsOnce ensures metrics are only initialized once
+	metricsOnce sync.Once
 )
+
+// getOrCreateInt returns an existing expvar.Int or creates a new one
+func getOrCreateInt(name string) *expvar.Int {
+	if v := expvar.Get(name); v != nil {
+		return v.(*expvar.Int)
+	}
+	return expvar.NewInt(name)
+}
+
+// getOrCreateMap returns an existing expvar.Map or creates a new one
+func getOrCreateMap(name string) *expvar.Map {
+	if v := expvar.Get(name); v != nil {
+		return v.(*expvar.Map)
+	}
+	return expvar.NewMap(name)
+}
+
+// initMetrics initializes all metrics (called once via sync.Once)
+func initMetrics() {
+	numReadsVlog = getOrCreateInt(BADGER_METRIC_PREFIX + "read_num_vlog")
+	numBytesReadVlog = getOrCreateInt(BADGER_METRIC_PREFIX + "read_bytes_vlog")
+	numWritesVlog = getOrCreateInt(BADGER_METRIC_PREFIX + "write_num_vlog")
+	numBytesVlogWritten = getOrCreateInt(BADGER_METRIC_PREFIX + "write_bytes_vlog")
+
+	numBytesReadLSM = getOrCreateInt(BADGER_METRIC_PREFIX + "read_bytes_lsm")
+	numBytesWrittenToL0 = getOrCreateInt(BADGER_METRIC_PREFIX + "write_bytes_l0")
+	numBytesCompactionWritten = getOrCreateMap(BADGER_METRIC_PREFIX + "write_bytes_compaction")
+
+	numLSMGets = getOrCreateMap(BADGER_METRIC_PREFIX + "get_num_lsm")
+	numLSMBloomHits = getOrCreateMap(BADGER_METRIC_PREFIX + "hit_num_lsm_bloom_filter")
+	numMemtableGets = getOrCreateInt(BADGER_METRIC_PREFIX + "get_num_memtable")
+
+	// User operations
+	numGets = getOrCreateInt(BADGER_METRIC_PREFIX + "get_num_user")
+	numPuts = getOrCreateInt(BADGER_METRIC_PREFIX + "put_num_user")
+	numBytesWrittenUser = getOrCreateInt(BADGER_METRIC_PREFIX + "write_bytes_user")
+
+	// Required for Enabled
+	numGetsWithResults = getOrCreateInt(BADGER_METRIC_PREFIX + "get_with_result_num_user")
+	numIteratorsCreated = getOrCreateInt(BADGER_METRIC_PREFIX + "iterator_num_user")
+
+	// Sizes
+	lsmSize = getOrCreateMap(BADGER_METRIC_PREFIX + "size_bytes_lsm")
+	vlogSize = getOrCreateMap(BADGER_METRIC_PREFIX + "size_bytes_vlog")
+
+	pendingWrites = getOrCreateMap(BADGER_METRIC_PREFIX + "write_pending_num_memtable")
+	numCompactionTables = getOrCreateInt(BADGER_METRIC_PREFIX + "compaction_current_num_lsm")
+}
 
 // These variables are global and have cumulative values for all kv stores.
 // Naming convention of metrics: {badger_version}_{singular operation}_{granularity}_{component}
 func init() {
-	numReadsVlog = expvar.NewInt(BADGER_METRIC_PREFIX + "read_num_vlog")
-	numBytesReadVlog = expvar.NewInt(BADGER_METRIC_PREFIX + "read_bytes_vlog")
-	numWritesVlog = expvar.NewInt(BADGER_METRIC_PREFIX + "write_num_vlog")
-	numBytesVlogWritten = expvar.NewInt(BADGER_METRIC_PREFIX + "write_bytes_vlog")
-
-	numBytesReadLSM = expvar.NewInt(BADGER_METRIC_PREFIX + "read_bytes_lsm")
-	numBytesWrittenToL0 = expvar.NewInt(BADGER_METRIC_PREFIX + "write_bytes_l0")
-	numBytesCompactionWritten = expvar.NewMap(BADGER_METRIC_PREFIX + "write_bytes_compaction")
-
-	numLSMGets = expvar.NewMap(BADGER_METRIC_PREFIX + "get_num_lsm")
-	numLSMBloomHits = expvar.NewMap(BADGER_METRIC_PREFIX + "hit_num_lsm_bloom_filter")
-	numMemtableGets = expvar.NewInt(BADGER_METRIC_PREFIX + "get_num_memtable")
-
-	// User operations
-	numGets = expvar.NewInt(BADGER_METRIC_PREFIX + "get_num_user")
-	numPuts = expvar.NewInt(BADGER_METRIC_PREFIX + "put_num_user")
-	numBytesWrittenUser = expvar.NewInt(BADGER_METRIC_PREFIX + "write_bytes_user")
-
-	// Required for Enabled
-	numGetsWithResults = expvar.NewInt(BADGER_METRIC_PREFIX + "get_with_result_num_user")
-	numIteratorsCreated = expvar.NewInt(BADGER_METRIC_PREFIX + "iterator_num_user")
-
-	// Sizes
-	lsmSize = expvar.NewMap(BADGER_METRIC_PREFIX + "size_bytes_lsm")
-	vlogSize = expvar.NewMap(BADGER_METRIC_PREFIX + "size_bytes_vlog")
-
-	pendingWrites = expvar.NewMap(BADGER_METRIC_PREFIX + "write_pending_num_memtable")
-	numCompactionTables = expvar.NewInt(BADGER_METRIC_PREFIX + "compaction_current_num_lsm")
+	metricsOnce.Do(initMetrics)
 }
 
 func NumIteratorsCreatedAdd(enabled bool, val int64) {
