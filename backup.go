@@ -13,8 +13,6 @@ import (
 	"fmt"
 	"io"
 
-	"google.golang.org/protobuf/proto"
-
 	"github.com/luxfi/zapdb/v4/pb"
 	"github.com/luxfi/zapdb/v4/y"
 	"github.com/dgraph-io/ristretto/v2/z"
@@ -137,10 +135,10 @@ func (stream *Stream) Backup(w io.Writer, since uint64) (uint64, error) {
 }
 
 func writeTo(list *pb.KVList, w io.Writer) error {
-	if err := binary.Write(w, binary.LittleEndian, uint64(proto.Size(list))); err != nil {
+	if err := binary.Write(w, binary.LittleEndian, uint64(pb.Size(list))); err != nil {
 		return err
 	}
-	buf, err := proto.Marshal(list)
+	buf, err := pb.Marshal(list)
 	if err != nil {
 		return err
 	}
@@ -253,7 +251,7 @@ func (db *DB) Load(r io.Reader, maxPendingWrites int) error {
 		}
 
 		list := &pb.KVList{}
-		if err := proto.Unmarshal(unmarshalBuf[:sz], list); err != nil {
+		if err := pb.Unmarshal(unmarshalBuf[:sz], list); err != nil {
 			return err
 		}
 
