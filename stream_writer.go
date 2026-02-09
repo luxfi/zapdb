@@ -11,7 +11,6 @@ import (
 	"sync"
 
 	"github.com/dustin/go-humanize"
-	"google.golang.org/protobuf/proto"
 
 	"github.com/luxfi/zapdb/v4/pb"
 	"github.com/luxfi/zapdb/v4/table"
@@ -141,7 +140,7 @@ func (sw *StreamWriter) Write(buf *z.Buffer) error {
 
 	err := buf.SliceIterate(func(s []byte) error {
 		var kv pb.KV
-		if err := proto.Unmarshal(s, &kv); err != nil {
+		if err := pb.Unmarshal(s, &kv); err != nil {
 			return err
 		}
 		if kv.StreamDone {
