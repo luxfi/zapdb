@@ -1,6 +1,6 @@
 module github.com/luxfi/zapdb/v4
 
-go 1.23.0
+go 1.26
 
 toolchain go1.25.0
 
