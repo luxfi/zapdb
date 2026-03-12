@@ -241,7 +241,7 @@ func TestBigKeyValuePairs(t *testing.T) {
 				}
 				return item.Value(func(val []byte) error {
 					if len(val) == 0 {
-						log.Fatalf("key not found %q", len(key))
+						log.Fatalf("key not found %d", len(key))
 					}
 					return nil
 				})
@@ -378,7 +378,7 @@ func TestBigValues(t *testing.T) {
 				}
 				return item.Value(func(val []byte) error {
 					if len(val) == 0 || len(val) != len(data) || !bytes.Equal(val, data) {
-						log.Fatalf("key not found %q", len(key))
+						log.Fatalf("key not found %d", len(key))
 					}
 					return nil
 				})
@@ -602,7 +602,7 @@ func TestL0GCBug(t *testing.T) {
 			success++
 		}
 		if err != nil && err != ErrNoRewrite {
-			t.Fatalf(err.Error())
+			t.Fatalf("%s", err.Error())
 		}
 	}
 	// Ensure at least one GC call was successful.
