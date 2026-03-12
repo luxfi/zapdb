@@ -1,8 +1,8 @@
 module github.com/luxfi/zapdb/v4
 
-go 1.26
+go 1.26.1
 
-toolchain go1.25.0
+toolchain go1.26.1
 
 require (
 	github.com/cespare/xxhash/v2 v2.3.0
