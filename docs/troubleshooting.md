@@ -110,7 +110,7 @@ badger v1.6.0 and you wish to migrate to v2.0.0 version.
 
 2. Create Backup
    - `badger backup --dir path/to/badger/directory -f badger.backup`
-3. Install Badger version v2.0.0
+3. Install ZapDB version v1.0.0
    - `cd $GOPATH/src/github.com/dgraph-io/badger`
    - `git checkout v2.0.0`
    - `cd badger && go install`
