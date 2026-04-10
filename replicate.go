@@ -308,17 +308,17 @@ func (r *Replicator) downloadAndLoad(ctx context.Context, key string) error {
 }
 
 func (r *Replicator) incKey(version uint64) string {
-	ext := ".pb"
+	ext := ".zap"
 	if r.cfg.AgeRecipient != nil {
-		ext = ".pb.age"
+		ext = ".zap.age"
 	}
 	return path.Join(r.cfg.Path, "inc", fmt.Sprintf("%020d%s", version, ext))
 }
 
 func (r *Replicator) snapKey(t time.Time) string {
-	ext := ".pb"
+	ext := ".zap"
 	if r.cfg.AgeRecipient != nil {
-		ext = ".pb.age"
+		ext = ".zap.age"
 	}
 	return path.Join(r.cfg.Path, "snap", fmt.Sprintf("%d%s", t.UnixNano(), ext))
 }
@@ -326,9 +326,9 @@ func (r *Replicator) snapKey(t time.Time) string {
 // versionFromKey extracts the version number from an incremental backup key.
 func versionFromKey(key string) uint64 {
 	base := path.Base(key)
-	// Strip extensions (.pb, .pb.age)
+	// Strip extensions (.zap, .zap.age)
 	base = strings.TrimSuffix(base, ".age")
-	base = strings.TrimSuffix(base, ".pb")
+	base = strings.TrimSuffix(base, ".zap")
 	v, _ := strconv.ParseUint(base, 10, 64)
 	return v
 }
