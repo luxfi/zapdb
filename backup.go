@@ -24,7 +24,7 @@ import (
 // than the maxBatchSize.
 const flushThreshold = 100 << 20
 
-// Backup dumps a protobuf-encoded list of all entries in the database into the
+// Backup dumps a ZAP binary-encoded list of all entries in the database into the
 // given writer, that are newer than or equal to the specified version. It
 // returns a timestamp (version) indicating the version of last entry that is
 // dumped, which after incrementing by 1 can be passed into later invocation to
@@ -41,7 +41,7 @@ func (db *DB) Backup(w io.Writer, since uint64) (uint64, error) {
 	return stream.Backup(w, since)
 }
 
-// Backup dumps a protobuf-encoded list of all entries in the database into the
+// Backup dumps a ZAP binary-encoded list of all entries in the database into the
 // given writer, that are newer than or equal to the specified version. It returns a
 // timestamp(version) indicating the version of last entry that was dumped, which
 // after incrementing by 1 can be passed into a later invocation to generate an
@@ -221,7 +221,7 @@ func (l *KVLoader) Finish() error {
 	return l.throttle.Finish()
 }
 
-// Load reads a protobuf-encoded list of all entries from a reader and writes
+// Load reads a ZAP binary-encoded list of all entries from a reader and writes
 // them to the database. This can be used to restore the database from a backup
 // made by calling DB.Backup(). If more complex logic is needed to restore a badger
 // backup, the KVLoader interface should be used instead.
