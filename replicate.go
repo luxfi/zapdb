@@ -146,6 +146,7 @@ func (r *Replicator) Incremental(ctx context.Context) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
+	// TODO: replace bytes.Buffer with io.Pipe for streaming to avoid 3x memory overhead on large databases
 	var buf bytes.Buffer
 	maxVersion, err := r.db.Backup(&buf, r.sinceVersion)
 	if err != nil {
@@ -185,6 +186,7 @@ func (r *Replicator) Snapshot(ctx context.Context) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
+	// TODO: replace bytes.Buffer with io.Pipe for streaming to avoid 3x memory overhead on large databases
 	var buf bytes.Buffer
 	maxVersion, err := r.db.Backup(&buf, 0)
 	if err != nil {
