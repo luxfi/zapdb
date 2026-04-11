@@ -1,4 +1,4 @@
-module github.com/luxfi/zapdb/v4
+module github.com/luxfi/zapdb
 
 go 1.26.1
 
@@ -46,6 +46,4 @@ require (
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
 
-retract v4.0.0 // see #1888 and #1889
 
-retract v4.3.0 // see #2113 and #2121

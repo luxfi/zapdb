@@ -9,7 +9,7 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/luxfi/zapdb/v4/options"
+	"github.com/luxfi/zapdb/options"
 )
 
 func TestOptions(t *testing.T) {

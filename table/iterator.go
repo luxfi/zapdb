@@ -11,8 +11,8 @@ import (
 	"io"
 	"sort"
 
-	"github.com/luxfi/zapdb/v4/fb"
-	"github.com/luxfi/zapdb/v4/y"
+	"github.com/luxfi/zapdb/fb"
+	"github.com/luxfi/zapdb/y"
 )
 
 type blockIterator struct {

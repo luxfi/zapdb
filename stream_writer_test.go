@@ -16,8 +16,8 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxfi/zapdb/v4/pb"
-	"github.com/luxfi/zapdb/v4/y"
+	"github.com/luxfi/zapdb/pb"
+	"github.com/luxfi/zapdb/y"
 	"github.com/dgraph-io/ristretto/v2/z"
 )
 

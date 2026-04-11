@@ -21,8 +21,8 @@ import (
 	"github.com/cespare/xxhash/v2"
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxfi/zapdb/v4/options"
-	"github.com/luxfi/zapdb/v4/y"
+	"github.com/luxfi/zapdb/options"
+	"github.com/luxfi/zapdb/y"
 	"github.com/dgraph-io/ristretto/v2"
 )
 

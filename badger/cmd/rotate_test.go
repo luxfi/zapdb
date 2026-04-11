@@ -12,8 +12,8 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxfi/zapdb/v4"
-	"github.com/luxfi/zapdb/v4/y"
+	"github.com/luxfi/zapdb"
+	"github.com/luxfi/zapdb/y"
 )
 
 func TestRotate(t *testing.T) {

@@ -10,8 +10,8 @@ import (
 	"sort"
 	"sync"
 
-	"github.com/luxfi/zapdb/v4/table"
-	"github.com/luxfi/zapdb/v4/y"
+	"github.com/luxfi/zapdb/table"
+	"github.com/luxfi/zapdb/y"
 )
 
 type levelHandler struct {

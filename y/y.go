@@ -20,7 +20,7 @@ import (
 	"time"
 	"unsafe"
 
-	"github.com/luxfi/zapdb/v4/pb"
+	"github.com/luxfi/zapdb/pb"
 	"github.com/dgraph-io/ristretto/v2/z"
 )
 

@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"github.com/cespare/xxhash/v2"
-	"github.com/luxfi/zapdb/v4/pb"
+	"github.com/luxfi/zapdb/pb"
 	"github.com/stretchr/testify/require"
 )
 

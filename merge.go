@@ -10,7 +10,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/luxfi/zapdb/v4/y"
+	"github.com/luxfi/zapdb/y"
 	"github.com/dgraph-io/ristretto/v2/z"
 )
 

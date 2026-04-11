@@ -19,10 +19,10 @@ import (
 	"github.com/dustin/go-humanize"
 	"github.com/spf13/cobra"
 
-	"github.com/luxfi/zapdb/v4"
-	"github.com/luxfi/zapdb/v4/options"
-	"github.com/luxfi/zapdb/v4/table"
-	"github.com/luxfi/zapdb/v4/y"
+	"github.com/luxfi/zapdb"
+	"github.com/luxfi/zapdb/options"
+	"github.com/luxfi/zapdb/table"
+	"github.com/luxfi/zapdb/y"
 )
 
 type flagOptions struct {

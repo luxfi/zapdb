@@ -8,7 +8,7 @@ package table
 import (
 	"bytes"
 
-	"github.com/luxfi/zapdb/v4/y"
+	"github.com/luxfi/zapdb/y"
 )
 
 // MergeIterator merges multiple iterators.
