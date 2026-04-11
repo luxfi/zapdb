@@ -18,9 +18,9 @@ import (
 	"path/filepath"
 	"sync"
 
-	"github.com/luxfi/zapdb/v4/options"
-	"github.com/luxfi/zapdb/v4/pb"
-	"github.com/luxfi/zapdb/v4/y"
+	"github.com/luxfi/zapdb/options"
+	"github.com/luxfi/zapdb/pb"
+	"github.com/luxfi/zapdb/y"
 )
 
 // Manifest represents the contents of the MANIFEST file in a Badger store.

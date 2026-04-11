@@ -12,9 +12,9 @@ import (
 
 	"github.com/dustin/go-humanize"
 
-	"github.com/luxfi/zapdb/v4/pb"
-	"github.com/luxfi/zapdb/v4/table"
-	"github.com/luxfi/zapdb/v4/y"
+	"github.com/luxfi/zapdb/pb"
+	"github.com/luxfi/zapdb/table"
+	"github.com/luxfi/zapdb/y"
 	"github.com/dgraph-io/ristretto/v2/z"
 )
 
