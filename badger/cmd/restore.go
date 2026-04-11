@@ -13,7 +13,7 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/luxfi/zapdb/v4"
+	"github.com/luxfi/zapdb"
 )
 
 var restoreFile string
