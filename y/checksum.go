@@ -11,7 +11,7 @@ import (
 
 	"github.com/cespare/xxhash/v2"
 
-	"github.com/luxfi/zapdb/v4/pb"
+	"github.com/luxfi/zapdb/pb"
 )
 
 // ErrChecksumMismatch is returned at checksum mismatch.

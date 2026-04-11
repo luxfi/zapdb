@@ -22,7 +22,7 @@ import (
 	"sync/atomic"
 	"unsafe"
 
-	badger "github.com/luxfi/zapdb/v4"
+	badger "github.com/luxfi/zapdb"
 )
 
 // ═══════════════════════════════════════════════════════════════════════

@@ -24,10 +24,10 @@ import (
 	"github.com/klauspost/compress/snappy"
 	"github.com/klauspost/compress/zstd"
 
-	"github.com/luxfi/zapdb/v4/fb"
-	"github.com/luxfi/zapdb/v4/options"
-	"github.com/luxfi/zapdb/v4/pb"
-	"github.com/luxfi/zapdb/v4/y"
+	"github.com/luxfi/zapdb/fb"
+	"github.com/luxfi/zapdb/options"
+	"github.com/luxfi/zapdb/pb"
+	"github.com/luxfi/zapdb/y"
 	"github.com/dgraph-io/ristretto/v2"
 	"github.com/dgraph-io/ristretto/v2/z"
 )
