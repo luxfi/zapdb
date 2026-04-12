@@ -281,7 +281,7 @@ File extensions: `.zap` (plaintext), `.zap.age` (encrypted).
 
 S3 path convention: `{prefix}/{service}/{pod}/{version}.zap.age`
 
-Compatible with `hanzoai/s3` (MinIO).
+Compatible with any S3-compatible object storage (MinIO, AWS S3, etc.).
 
 ```go
 import "github.com/luxfi/zapdb/v4"
