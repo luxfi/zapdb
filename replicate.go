@@ -17,9 +17,9 @@ import (
 	"sync"
 	"time"
 
+	s3 "github.com/hanzos3/go-sdk"
+	"github.com/hanzos3/go-sdk/pkg/credentials"
 	"github.com/luxfi/age"
-	"github.com/minio/minio-go/v7"
-	"github.com/minio/minio-go/v7/pkg/credentials"
 )
 
 // ReplicatorConfig configures encrypted streaming replication to S3.
@@ -73,7 +73,7 @@ func (c *ReplicatorConfig) maxPendingWrites() int {
 type Replicator struct {
 	db   *DB
 	cfg  ReplicatorConfig
-	s3   *minio.Client
+	cli  *s3.Client
 	log  Logger
 	mu   sync.Mutex
 	stop context.CancelFunc
@@ -84,7 +84,7 @@ type Replicator struct {
 
 // NewReplicator creates a Replicator. Call Start to begin replication.
 func NewReplicator(db *DB, cfg ReplicatorConfig) (*Replicator, error) {
-	s3, err := minio.New(cfg.Endpoint, &minio.Options{
+	cli, err := s3.New(cfg.Endpoint, &s3.Options{
 		Creds:  credentials.NewStaticV4(cfg.AccessKey, cfg.SecretKey, ""),
 		Region: cfg.Region,
 		Secure: cfg.UseSSL,
@@ -101,7 +101,7 @@ func NewReplicator(db *DB, cfg ReplicatorConfig) (*Replicator, error) {
 	return &Replicator{
 		db:  db,
 		cfg: cfg,
-		s3:  s3,
+		cli: cli,
 		log: log,
 	}, nil
 }
@@ -169,7 +169,7 @@ func (r *Replicator) Incremental(ctx context.Context) error {
 	}
 
 	key := r.incKey(maxVersion)
-	_, err = r.s3.PutObject(ctx, r.cfg.Bucket, key, body, size, minio.PutObjectOptions{
+	_, err = r.cli.PutObject(ctx, r.cfg.Bucket, key, body, size, s3.PutObjectOptions{
 		ContentType: "application/octet-stream",
 	})
 	if err != nil {
@@ -209,7 +209,7 @@ func (r *Replicator) Snapshot(ctx context.Context) error {
 	}
 
 	key := r.snapKey(time.Now())
-	_, err = r.s3.PutObject(ctx, r.cfg.Bucket, key, body, size, minio.PutObjectOptions{
+	_, err = r.cli.PutObject(ctx, r.cfg.Bucket, key, body, size, s3.PutObjectOptions{
 		ContentType: "application/octet-stream",
 	})
 	if err != nil {
@@ -232,7 +232,7 @@ func (r *Replicator) Restore(ctx context.Context) error {
 	// Find latest snapshot.
 	snapPrefix := path.Join(r.cfg.Path, "snap") + "/"
 	latestSnap := ""
-	for obj := range r.s3.ListObjects(ctx, r.cfg.Bucket, minio.ListObjectsOptions{
+	for obj := range r.cli.ListObjects(ctx, r.cfg.Bucket, s3.ListObjectsOptions{
 		Prefix:    snapPrefix,
 		Recursive: true,
 	}) {
@@ -263,7 +263,7 @@ func (r *Replicator) Restore(ctx context.Context) error {
 		version uint64
 	}
 	var incs []incEntry
-	for obj := range r.s3.ListObjects(ctx, r.cfg.Bucket, minio.ListObjectsOptions{
+	for obj := range r.cli.ListObjects(ctx, r.cfg.Bucket, s3.ListObjectsOptions{
 		Prefix:    incPrefix,
 		Recursive: true,
 	}) {
@@ -291,7 +291,7 @@ func (r *Replicator) Restore(ctx context.Context) error {
 }
 
 func (r *Replicator) downloadAndLoad(ctx context.Context, key string) error {
-	obj, err := r.s3.GetObject(ctx, r.cfg.Bucket, key, minio.GetObjectOptions{})
+	obj, err := r.cli.GetObject(ctx, r.cfg.Bucket, key, s3.GetObjectOptions{})
 	if err != nil {
 		return fmt.Errorf("get %s: %w", key, err)
 	}
