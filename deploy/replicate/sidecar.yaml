@@ -1,0 +1,104 @@
+# Sidecar pattern: zapdb-replicate runs in the same Pod as luxd, opens
+# /data/db/<network> in read-only + bypass-lock-guard mode, streams
+# Backup() through hanzoai/vfs into S3.
+#
+# Tag MUST be a v* semver (semver-only policy 2026-04-30). Never :latest.
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: luxd-mainnet
+  namespace: lux
+spec:
+  serviceName: luxd-mainnet
+  replicas: 1
+  selector:
+    matchLabels:
+      app: luxd-mainnet
+  template:
+    metadata:
+      labels:
+        app: luxd-mainnet
+    spec:
+      containers:
+        - name: luxd
+          image: ghcr.io/luxfi/node:v1.27.6
+          args: ["--data-dir=/data", "--network-id=mainnet"]
+          volumeMounts:
+            - name: data
+              mountPath: /data
+
+        - name: zapdb-replicate
+          image: ghcr.io/luxfi/zapdb-replicate:v0.1.0
+          imagePullPolicy: IfNotPresent
+          args:
+            - replicate
+            - --config=/etc/zapdb-replicate/config.yaml
+          volumeMounts:
+            - name: data
+              mountPath: /data
+              readOnly: false   # we write the local state file
+            - name: zapdb-config
+              mountPath: /etc/zapdb-replicate
+              readOnly: true
+            - name: zapdb-age-keys
+              mountPath: /etc/zapdb-replicate/age
+              readOnly: true
+            - name: zapdb-s3-creds
+              mountPath: /etc/zapdb-replicate/aws
+              readOnly: true
+          env:
+            - name: AWS_SHARED_CREDENTIALS_FILE
+              value: /etc/zapdb-replicate/aws/credentials
+            - name: AWS_REGION
+              value: us-east-1
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+
+      volumes:
+        - name: zapdb-config
+          configMap:
+            name: zapdb-replicate-mainnet
+        - name: zapdb-age-keys
+          secret:
+            secretName: zapdb-replicate-age-mainnet
+        - name: zapdb-s3-creds
+          secret:
+            secretName: zapdb-replicate-s3-mainnet
+
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes: [ReadWriteOnce]
+        storageClassName: do-block-storage
+        resources:
+          requests:
+            storage: 1000Gi
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: zapdb-replicate-mainnet
+  namespace: lux
+data:
+  config.yaml: |
+    databases:
+      - path: /data/db/mainnet
+        network: mainnet
+        replicas:
+          - type: s3
+            endpoint: http://s3.lux-system.svc.cluster.local:9000
+            bucket: lux-snapshots
+            prefix: mainnet/zapdb
+            region: us-east-1
+            age-recipients: /etc/zapdb-replicate/age/recipients.txt
+            age-key: /etc/zapdb-replicate/age/identity.txt
+            interval: 60s
+            full-snapshot-every: 168h
+            cache-bytes: 67108864   # 64 MiB
