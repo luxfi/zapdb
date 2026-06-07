@@ -1,0 +1,12 @@
+apiVersion: v2
+name: zapdb-replicate
+description: Encrypted streaming replication for Lux ZapDB chain state.
+type: application
+version: 0.1.0
+appVersion: "0.1.0"
+home: https://github.com/luxfi/zapdb/tree/main/cmd/replicate
+sources:
+  - https://github.com/luxfi/zapdb
+maintainers:
+  - name: luxfi
+    email: ops@lux.network

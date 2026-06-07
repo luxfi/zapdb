@@ -1,0 +1,41 @@
+image:
+  repository: ghcr.io/luxfi/zapdb-replicate
+  # Image is built from luxfi/zapdb (build context = repo root, Dockerfile = deploy/replicate/Dockerfile).
+  # Tag tracks the luxfi/zapdb release (one binary cut from the parent module).
+  tag: v0.1.0
+  pullPolicy: IfNotPresent
+
+# When true, this chart only renders a sidecar+initContainer to be
+# composed into another StatefulSet via helm dependency. The default
+# (false) renders a standalone test deployment.
+asInjector: false
+
+# Source-of-truth ZapDB directory (mounted from the parent StatefulSet
+# via shared volume).
+dbPath: /data/db/mainnet
+network: mainnet
+
+s3:
+  endpoint: http://s3.lux-system.svc.cluster.local:9000
+  bucket: lux-snapshots
+  prefix: mainnet/zapdb
+  region: us-east-1
+  credentialsSecret: zapdb-replicate-s3-mainnet
+
+age:
+  recipientsPath: /etc/zapdb-replicate/age/recipients.txt
+  identityPath: /etc/zapdb-replicate/age/identity.txt
+  keysSecret: zapdb-replicate-age-mainnet
+
+schedule:
+  interval: 60s
+  fullSnapshotEvery: 168h
+  cacheBytes: 67108864
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 256Mi
+  limits:
+    cpu: 500m
+    memory: 512Mi
