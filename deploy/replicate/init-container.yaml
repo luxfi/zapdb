@@ -1,0 +1,70 @@
+# Init container pattern: zapdb-replicate runs ONCE before luxd boots
+# to restore an empty /data/db/<network> from the most recent S3
+# snapshot chain. After it exits successfully, the main luxd container
+# starts and opens a populated DB.
+#
+# Pair this with the sidecar.yaml for ongoing replication; the init
+# container only matters on a cold boot (fresh PVC).
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: luxd-mainnet
+  namespace: lux
+spec:
+  serviceName: luxd-mainnet
+  replicas: 1
+  selector:
+    matchLabels:
+      app: luxd-mainnet
+  template:
+    metadata:
+      labels:
+        app: luxd-mainnet
+    spec:
+      initContainers:
+        - name: zapdb-restore
+          image: ghcr.io/luxfi/zapdb-replicate:v0.1.0
+          args:
+            - restore
+            - --path=/data/db/mainnet
+            - --network=mainnet
+            - --url=s3://lux-snapshots/mainnet/zapdb?endpoint=http://s3.lux-system.svc.cluster.local:9000&region=us-east-1
+            - --age-key=/etc/zapdb-replicate/age/identity.txt
+            - --cache-bytes=134217728
+          volumeMounts:
+            - name: data
+              mountPath: /data
+            - name: zapdb-age-keys
+              mountPath: /etc/zapdb-replicate/age
+              readOnly: true
+            - name: zapdb-s3-creds
+              mountPath: /etc/zapdb-replicate/aws
+              readOnly: true
+          env:
+            - name: AWS_SHARED_CREDENTIALS_FILE
+              value: /etc/zapdb-replicate/aws/credentials
+            - name: AWS_REGION
+              value: us-east-1
+      containers:
+        - name: luxd
+          image: ghcr.io/luxfi/node:v1.27.6
+          args: ["--data-dir=/data", "--network-id=mainnet"]
+          volumeMounts:
+            - name: data
+              mountPath: /data
+      volumes:
+        - name: zapdb-age-keys
+          secret:
+            secretName: zapdb-replicate-age-mainnet
+        - name: zapdb-s3-creds
+          secret:
+            secretName: zapdb-replicate-s3-mainnet
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes: [ReadWriteOnce]
+        storageClassName: do-block-storage
+        resources:
+          requests:
+            storage: 1000Gi
