@@ -1,4 +1,4 @@
-# LLM.md - Hanzo Zapdb
+# Hanzo Zapdb
 
 ## Overview
 Go module: github.com/luxfi/zapdb/v4
