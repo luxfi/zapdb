@@ -1,0 +1,6 @@
+zapdb
+Copyright (c) 2024-2026 Lux Industries Inc.
+
+This product includes software from BadgerDB (https://github.com/dgraph-io/badger), licensed under Apache-2.0:
+
+    Copyright (c) 2017-2025 Istari Digital, Inc. (formerly Dgraph Labs, Inc.) and Contributors
