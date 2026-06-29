@@ -1,3 +1,5 @@
+<p align="center"><img src=".github/hero.svg" alt="zapdb" width="880"></p>
+
 # BadgerDB
 
 [![Go Reference](https://pkg.go.dev/badge/github.com/dgraph-io/badger/v4.svg)](https://pkg.go.dev/github.com/dgraph-io/badger/v4)
