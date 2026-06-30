@@ -10,7 +10,7 @@ require (
 	github.com/hanzoai/vfs v0.4.3
 	github.com/hanzos3/go-sdk v1.0.2
 	github.com/klauspost/compress v1.18.5
-	github.com/luxfi/age v1.5.0
+	github.com/luxfi/age v1.6.0
 	github.com/luxfi/log v1.4.3
 	github.com/spf13/cobra v1.10.2
 	github.com/stretchr/testify v1.11.1
