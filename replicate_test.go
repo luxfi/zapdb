@@ -222,6 +222,60 @@ func TestReplicatorIncrementalBackup(t *testing.T) {
 	require.NoError(t, db2.Close())
 }
 
+// TestReplicatorPushCursorCapturesEveryWrite is the regression test for the
+// incremental off-by-one. It simulates the Replicator's push→restore loop —
+// Backup(sinceVersion), then advance sinceVersion per the rule, then Load into
+// a follower — one write per round. Stream.SinceTs is EXCLUSIVE, so the write
+// landing at exactly the boundary (previous maxVersion+1) is dropped forever by
+// the maxVersion+1 cursor until a full snapshot. With the fix (sinceVersion =
+// maxVersion) EVERY write reaches the follower. Green here == fixed.
+func TestReplicatorPushCursorCapturesEveryWrite(t *testing.T) {
+	srcDir, err := os.MkdirTemp("", "zapdb-cursor-src")
+	require.NoError(t, err)
+	defer removeDir(srcDir)
+	dstDir, err := os.MkdirTemp("", "zapdb-cursor-dst")
+	require.NoError(t, err)
+	defer removeDir(dstDir)
+
+	src, err := Open(getTestOptions(srcDir))
+	require.NoError(t, err)
+	defer src.Close()
+	dst, err := Open(getTestOptions(dstDir))
+	require.NoError(t, err)
+	defer dst.Close()
+
+	const rounds = 6
+	var sinceVersion uint64 // the Replicator's cursor, seeded at 0
+	for i := 0; i < rounds; i++ {
+		k := []byte(fmt.Sprintf("k-%02d", i))
+		v := []byte(fmt.Sprintf("v-%02d", i))
+		require.NoError(t, src.Update(func(txn *Txn) error { return txn.Set(k, v) }))
+
+		var buf bytes.Buffer
+		maxV, err := src.Backup(&buf, sinceVersion)
+		require.NoError(t, err)
+		if buf.Len() > 0 {
+			require.NoError(t, dst.Load(&buf, 16))
+			// THE FIX: resume AT maxVersion (exclusive SinceTs), not maxVersion+1.
+			sinceVersion = maxV
+		}
+	}
+
+	// Every single-write round — including boundary writes — must be present.
+	require.NoError(t, dst.View(func(txn *Txn) error {
+		for i := 0; i < rounds; i++ {
+			k := []byte(fmt.Sprintf("k-%02d", i))
+			item, err := txn.Get(k)
+			require.NoError(t, err, "follower missing %s — a boundary write was dropped (off-by-one)", k)
+			require.NoError(t, item.Value(func(val []byte) error {
+				require.Equal(t, []byte(fmt.Sprintf("v-%02d", i)), val)
+				return nil
+			}))
+		}
+		return nil
+	}))
+}
+
 // TestReplicatorVersionFromKey tests version extraction from S3 keys.
 func TestReplicatorVersionFromKey(t *testing.T) {
 	tests := []struct {
@@ -295,13 +349,13 @@ func TestReplicatorEncryptedIncremental(t *testing.T) {
 }
 
 // TestReplicateE2E is the full end-to-end test:
-//   1. Create source DB, write 100 keys
-//   2. Full backup → age encrypt → buffer (simulating S3)
-//   3. Write 50 more keys to source
-//   4. Incremental backup → age encrypt → buffer
-//   5. Restore to fresh DB: decrypt full → load, decrypt inc → load
-//   6. Verify ALL 150 keys match
-//   7. Verify encrypted blobs cannot be loaded without decryption
+//  1. Create source DB, write 100 keys
+//  2. Full backup → age encrypt → buffer (simulating S3)
+//  3. Write 50 more keys to source
+//  4. Incremental backup → age encrypt → buffer
+//  5. Restore to fresh DB: decrypt full → load, decrypt inc → load
+//  6. Verify ALL 150 keys match
+//  7. Verify encrypted blobs cannot be loaded without decryption
 func TestReplicateE2E(t *testing.T) {
 	identity, err := age.GenerateX25519Identity()
 	require.NoError(t, err)
