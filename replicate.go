@@ -176,7 +176,12 @@ func (r *Replicator) Incremental(ctx context.Context) error {
 		return fmt.Errorf("upload %s: %w", key, err)
 	}
 
-	r.sinceVersion = maxVersion + 1
+	// Stream.SinceTs is EXCLUSIVE (entries with version <= SinceTs are
+	// ignored), so the NEXT backup must resume AT maxVersion, not maxVersion+1
+	// — otherwise the write at exactly maxVersion+1 is skipped by every
+	// incremental until the next full snapshot. Re-including maxVersion is a
+	// no-op (it is <= the exclusive bound), so there is no duplication.
+	r.sinceVersion = maxVersion
 	r.log.Infof("replicate: incremental uploaded %s (%d bytes, version %d)", key, size, maxVersion)
 	return nil
 }
@@ -217,7 +222,12 @@ func (r *Replicator) Snapshot(ctx context.Context) error {
 	}
 
 	r.lastSnapshot = time.Now()
-	r.sinceVersion = maxVersion + 1
+	// Stream.SinceTs is EXCLUSIVE (entries with version <= SinceTs are
+	// ignored), so the NEXT backup must resume AT maxVersion, not maxVersion+1
+	// — otherwise the write at exactly maxVersion+1 is skipped by every
+	// incremental until the next full snapshot. Re-including maxVersion is a
+	// no-op (it is <= the exclusive bound), so there is no duplication.
+	r.sinceVersion = maxVersion
 	r.log.Infof("replicate: snapshot uploaded %s (%d bytes, version %d)", key, size, maxVersion)
 	return nil
 }
@@ -251,9 +261,13 @@ func (r *Replicator) Restore(ctx context.Context) error {
 		if err := r.downloadAndLoad(ctx, latestSnap); err != nil {
 			return fmt.Errorf("restore snapshot: %w", err)
 		}
-		// Extract timestamp from snap key to filter incrementals.
-		// We still apply all incrementals since we don't know the exact version
-		// from the filename. The DB.Load handles duplicates safely.
+		// Seed snapVersion from the loaded DB's max version (db.Load advances
+		// it), so incrementals already contained in the snapshot are SKIPPED
+		// below rather than re-applied on every Restore. This bounds the
+		// restore-replay cost (previously snapVersion stayed 0 → every
+		// incremental ever was re-applied each cycle). Non-breaking: the
+		// snapshot key format is unchanged.
+		snapVersion = r.db.MaxVersion()
 	}
 
 	// Find and apply incrementals in order.
@@ -283,7 +297,10 @@ func (r *Replicator) Restore(ctx context.Context) error {
 		if err := r.downloadAndLoad(ctx, inc.key); err != nil {
 			return fmt.Errorf("restore incremental %s: %w", inc.key, err)
 		}
-		r.sinceVersion = inc.version + 1
+		// Resume the push cursor AT the last applied version (exclusive
+		// SinceTs), so a node promoted after a Restore does not skip the write
+		// at inc.version+1 on its first push.
+		r.sinceVersion = inc.version
 	}
 
 	r.log.Infof("replicate: restore complete (sinceVersion=%d)", r.sinceVersion)
