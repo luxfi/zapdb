@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-package badger
+package zapdb
 
 import (
 	"bytes"
@@ -295,13 +295,13 @@ func TestReplicatorEncryptedIncremental(t *testing.T) {
 }
 
 // TestReplicateE2E is the full end-to-end test:
-//   1. Create source DB, write 100 keys
-//   2. Full backup → age encrypt → buffer (simulating S3)
-//   3. Write 50 more keys to source
-//   4. Incremental backup → age encrypt → buffer
-//   5. Restore to fresh DB: decrypt full → load, decrypt inc → load
-//   6. Verify ALL 150 keys match
-//   7. Verify encrypted blobs cannot be loaded without decryption
+//  1. Create source DB, write 100 keys
+//  2. Full backup → age encrypt → buffer (simulating S3)
+//  3. Write 50 more keys to source
+//  4. Incremental backup → age encrypt → buffer
+//  5. Restore to fresh DB: decrypt full → load, decrypt inc → load
+//  6. Verify ALL 150 keys match
+//  7. Verify encrypted blobs cannot be loaded without decryption
 func TestReplicateE2E(t *testing.T) {
 	identity, err := age.GenerateX25519Identity()
 	require.NoError(t, err)

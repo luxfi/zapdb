@@ -46,7 +46,7 @@ func init() {
 
 func doRestore(cmd *cobra.Command, args []string) error {
 	// Check if the DB already exists
-	manifestFile := filepath.Join(sstDir, badger.ManifestFilename)
+	manifestFile := filepath.Join(sstDir, zapdb.ManifestFilename)
 	if _, err := os.Stat(manifestFile); err == nil { // No error. File already exists.
 		return errors.New("Cannot restore to an already existing database")
 	} else if os.IsNotExist(err) {
@@ -56,7 +56,7 @@ func doRestore(cmd *cobra.Command, args []string) error {
 	}
 
 	// Open DB
-	db, err := badger.Open(badger.DefaultOptions(sstDir).
+	db, err := zapdb.Open(zapdb.DefaultOptions(sstDir).
 		WithValueDir(vlogDir).
 		WithNumVersionsToKeep(math.MaxInt32))
 	if err != nil {

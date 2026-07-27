@@ -6,7 +6,7 @@ import (
 	"io"
 	"testing"
 
-	badger "github.com/luxfi/zapdb"
+	zapdb "github.com/luxfi/zapdb"
 	"github.com/stretchr/testify/require"
 )
 
@@ -21,11 +21,11 @@ func TestChunkPreservesBackupStream(t *testing.T) {
 	v := newTestVFS(t)
 	defer v.Close()
 
-	srcOpts := badger.DefaultOptions(t.TempDir())
+	srcOpts := zapdb.DefaultOptions(t.TempDir())
 	srcOpts.Logger = nil
-	src, err := badger.Open(srcOpts)
+	src, err := zapdb.Open(srcOpts)
 	require.NoError(t, err)
-	require.NoError(t, src.Update(func(txn *badger.Txn) error {
+	require.NoError(t, src.Update(func(txn *zapdb.Txn) error {
 		for i := 0; i < 100; i++ {
 			if err := txn.Set([]byte{byte(i)}, []byte{byte(i ^ 0xff)}); err != nil {
 				return err

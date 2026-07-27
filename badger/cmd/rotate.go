@@ -37,13 +37,13 @@ func doRotate(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return err
 	}
-	opt := badger.KeyRegistryOptions{
+	opt := zapdb.KeyRegistryOptions{
 		Dir:                           sstDir,
 		ReadOnly:                      true,
 		EncryptionKey:                 oldKey,
 		EncryptionKeyRotationDuration: 10 * 24 * time.Hour,
 	}
-	kr, err := badger.OpenKeyRegistry(opt)
+	kr, err := zapdb.OpenKeyRegistry(opt)
 	if err != nil {
 		return err
 	}
@@ -52,7 +52,7 @@ func doRotate(cmd *cobra.Command, args []string) error {
 		return err
 	}
 	opt.EncryptionKey = newKey
-	err = badger.WriteKeyRegistry(kr, opt)
+	err = zapdb.WriteKeyRegistry(kr, opt)
 	if err != nil {
 		return err
 	}

@@ -24,4 +24,4 @@ well). Read-write transactions can also update and delete keys from the DB.
 
 See the examples for more usage details.
 */
-package badger
+package zapdb

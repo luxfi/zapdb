@@ -6,7 +6,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-package badger
+package zapdb
 
 // OpenDir opens a directory in windows with write access for syncing.
 import (

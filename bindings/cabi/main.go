@@ -22,7 +22,7 @@ import (
 	"sync/atomic"
 	"unsafe"
 
-	badger "github.com/luxfi/zapdb"
+	zapdb "github.com/luxfi/zapdb"
 )
 
 // ═══════════════════════════════════════════════════════════════════════
@@ -78,9 +78,9 @@ func dropHandle(h C.ulonglong) {
 //export lux_zapdb_open
 func lux_zapdb_open(path *C.char, pathLen C.int, out *C.ulonglong) C.int {
 	goPath := C.GoStringN(path, pathLen)
-	opts := badger.DefaultOptions(goPath)
+	opts := zapdb.DefaultOptions(goPath)
 	opts.Logger = nil // Silence internal logging for FFI use.
-	db, err := badger.Open(opts)
+	db, err := zapdb.Open(opts)
 	if err != nil {
 		return -3
 	}
@@ -90,7 +90,7 @@ func lux_zapdb_open(path *C.char, pathLen C.int, out *C.ulonglong) C.int {
 
 //export lux_zapdb_close
 func lux_zapdb_close(handle C.ulonglong) C.int {
-	db, ok := loadHandle[*badger.DB](handle)
+	db, ok := loadHandle[*zapdb.DB](handle)
 	if !ok {
 		return -1
 	}
@@ -111,14 +111,14 @@ func lux_zapdb_get(
 	key *C.char, keyLen C.int,
 	val *C.char, valLen *C.int,
 ) C.int {
-	db, ok := loadHandle[*badger.DB](handle)
+	db, ok := loadHandle[*zapdb.DB](handle)
 	if !ok {
 		return -1
 	}
 	goKey := C.GoBytes(unsafe.Pointer(key), keyLen)
 
 	var goVal []byte
-	err := db.View(func(txn *badger.Txn) error {
+	err := db.View(func(txn *zapdb.Txn) error {
 		item, err := txn.Get(goKey)
 		if err != nil {
 			return err
@@ -126,7 +126,7 @@ func lux_zapdb_get(
 		goVal, err = item.ValueCopy(nil)
 		return err
 	})
-	if err == badger.ErrKeyNotFound {
+	if err == zapdb.ErrKeyNotFound {
 		return -2
 	}
 	if err != nil {
@@ -151,14 +151,14 @@ func lux_zapdb_set(
 	key *C.char, keyLen C.int,
 	val *C.char, valLen C.int,
 ) C.int {
-	db, ok := loadHandle[*badger.DB](handle)
+	db, ok := loadHandle[*zapdb.DB](handle)
 	if !ok {
 		return -1
 	}
 	goKey := C.GoBytes(unsafe.Pointer(key), keyLen)
 	goVal := C.GoBytes(unsafe.Pointer(val), valLen)
 
-	err := db.Update(func(txn *badger.Txn) error {
+	err := db.Update(func(txn *zapdb.Txn) error {
 		return txn.Set(goKey, goVal)
 	})
 	if err != nil {
@@ -172,13 +172,13 @@ func lux_zapdb_delete(
 	handle C.ulonglong,
 	key *C.char, keyLen C.int,
 ) C.int {
-	db, ok := loadHandle[*badger.DB](handle)
+	db, ok := loadHandle[*zapdb.DB](handle)
 	if !ok {
 		return -1
 	}
 	goKey := C.GoBytes(unsafe.Pointer(key), keyLen)
 
-	err := db.Update(func(txn *badger.Txn) error {
+	err := db.Update(func(txn *zapdb.Txn) error {
 		return txn.Delete(goKey)
 	})
 	if err != nil {
@@ -201,7 +201,7 @@ func lux_zapdb_iterate(
 	prefix *C.char, prefixLen C.int,
 	callback unsafe.Pointer,
 ) C.int {
-	db, ok := loadHandle[*badger.DB](handle)
+	db, ok := loadHandle[*zapdb.DB](handle)
 	if !ok {
 		return -1
 	}
@@ -216,8 +216,8 @@ func lux_zapdb_iterate(
 	type cbFunc = func(k *C.char, kl C.int, v *C.char, vl C.int) C.int
 	cb := *(*cbFunc)(callback)
 
-	err := db.View(func(txn *badger.Txn) error {
-		opts := badger.DefaultIteratorOptions
+	err := db.View(func(txn *zapdb.Txn) error {
+		opts := zapdb.DefaultIteratorOptions
 		if len(goPrefix) > 0 {
 			opts.Prefix = goPrefix
 		}
@@ -258,7 +258,7 @@ func lux_zapdb_iterate(
 
 //export lux_zapdb_backup
 func lux_zapdb_backup(handle C.ulonglong, path *C.char, pathLen C.int) C.int {
-	db, ok := loadHandle[*badger.DB](handle)
+	db, ok := loadHandle[*zapdb.DB](handle)
 	if !ok {
 		return -1
 	}
@@ -276,7 +276,7 @@ func lux_zapdb_backup(handle C.ulonglong, path *C.char, pathLen C.int) C.int {
 
 //export lux_zapdb_load
 func lux_zapdb_load(handle C.ulonglong, path *C.char, pathLen C.int) C.int {
-	db, ok := loadHandle[*badger.DB](handle)
+	db, ok := loadHandle[*zapdb.DB](handle)
 	if !ok {
 		return -1
 	}
@@ -294,7 +294,7 @@ func lux_zapdb_load(handle C.ulonglong, path *C.char, pathLen C.int) C.int {
 
 //export lux_zapdb_sync
 func lux_zapdb_sync(handle C.ulonglong) C.int {
-	db, ok := loadHandle[*badger.DB](handle)
+	db, ok := loadHandle[*zapdb.DB](handle)
 	if !ok {
 		return -1
 	}
@@ -306,7 +306,7 @@ func lux_zapdb_sync(handle C.ulonglong) C.int {
 
 //export lux_zapdb_compact
 func lux_zapdb_compact(handle C.ulonglong) C.int {
-	db, ok := loadHandle[*badger.DB](handle)
+	db, ok := loadHandle[*zapdb.DB](handle)
 	if !ok {
 		return -1
 	}
@@ -322,7 +322,7 @@ func lux_zapdb_compact(handle C.ulonglong) C.int {
 
 //export lux_zapdb_new_txn
 func lux_zapdb_new_txn(handle C.ulonglong, readOnly C.int, out *C.ulonglong) C.int {
-	db, ok := loadHandle[*badger.DB](handle)
+	db, ok := loadHandle[*zapdb.DB](handle)
 	if !ok {
 		return -1
 	}
@@ -333,7 +333,7 @@ func lux_zapdb_new_txn(handle C.ulonglong, readOnly C.int, out *C.ulonglong) C.i
 
 //export lux_zapdb_txn_commit
 func lux_zapdb_txn_commit(txnHandle C.ulonglong) C.int {
-	txn, ok := loadHandle[*badger.Txn](txnHandle)
+	txn, ok := loadHandle[*zapdb.Txn](txnHandle)
 	if !ok {
 		return -1
 	}
@@ -346,7 +346,7 @@ func lux_zapdb_txn_commit(txnHandle C.ulonglong) C.int {
 
 //export lux_zapdb_txn_discard
 func lux_zapdb_txn_discard(txnHandle C.ulonglong) {
-	txn, ok := loadHandle[*badger.Txn](txnHandle)
+	txn, ok := loadHandle[*zapdb.Txn](txnHandle)
 	if !ok {
 		return
 	}
@@ -360,13 +360,13 @@ func lux_zapdb_txn_get(
 	key *C.char, keyLen C.int,
 	val *C.char, valLen *C.int,
 ) C.int {
-	txn, ok := loadHandle[*badger.Txn](txnHandle)
+	txn, ok := loadHandle[*zapdb.Txn](txnHandle)
 	if !ok {
 		return -1
 	}
 	goKey := C.GoBytes(unsafe.Pointer(key), keyLen)
 	item, err := txn.Get(goKey)
-	if err == badger.ErrKeyNotFound {
+	if err == zapdb.ErrKeyNotFound {
 		return -2
 	}
 	if err != nil {
@@ -393,7 +393,7 @@ func lux_zapdb_txn_set(
 	key *C.char, keyLen C.int,
 	val *C.char, valLen C.int,
 ) C.int {
-	txn, ok := loadHandle[*badger.Txn](txnHandle)
+	txn, ok := loadHandle[*zapdb.Txn](txnHandle)
 	if !ok {
 		return -1
 	}

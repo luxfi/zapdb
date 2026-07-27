@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-package badger
+package zapdb
 
 import (
 	"bytes"
@@ -23,14 +23,14 @@ import (
 
 	humanize "github.com/dustin/go-humanize"
 
+	"github.com/dgraph-io/ristretto/v2"
+	"github.com/dgraph-io/ristretto/v2/z"
 	"github.com/luxfi/zapdb/fb"
 	"github.com/luxfi/zapdb/options"
 	"github.com/luxfi/zapdb/pb"
 	"github.com/luxfi/zapdb/skl"
 	"github.com/luxfi/zapdb/table"
 	"github.com/luxfi/zapdb/y"
-	"github.com/dgraph-io/ristretto/v2"
-	"github.com/dgraph-io/ristretto/v2/z"
 )
 
 var (
@@ -971,7 +971,7 @@ func (db *DB) doWrites(lc *z.Closer) {
 	}
 }
 
-// batchSet applies a list of badger.Entry. If a request level error occurs it
+// batchSet applies a list of zapdb.Entry. If a request level error occurs it
 // will be returned.
 //
 //	Check(kv.BatchSet(entries))

@@ -16,7 +16,7 @@ import (
 	"github.com/hanzoai/vfs"
 	"github.com/hanzoai/vfs/pkg/backend"
 	log "github.com/luxfi/log"
-	badger "github.com/luxfi/zapdb"
+	zapdb "github.com/luxfi/zapdb"
 
 	"github.com/luxfi/zapdb/cmd/replicate/internal/manifest"
 	"github.com/luxfi/zapdb/cmd/replicate/internal/replica"
@@ -25,8 +25,8 @@ import (
 
 // Config wires a single restore run.
 type Config struct {
-	DBPath  string         // target path; created if it does not exist
-	Network string         // sanity check — must match HEAD/manifests
+	DBPath  string // target path; created if it does not exist
+	Network string // sanity check — must match HEAD/manifests
 	VFS     *vfs.VFS
 	Backend backend.Backend
 	// SkipIfNotEmpty: if true (default), restore aborts when the target
@@ -110,7 +110,7 @@ func Run(ctx context.Context, cfg Config) error {
 	return nil
 }
 
-func applyManifest(ctx context.Context, db *badger.DB, v *vfs.VFS, store *manifest.Store, key string, expectType manifest.Type) error {
+func applyManifest(ctx context.Context, db *zapdb.DB, v *vfs.VFS, store *manifest.Store, key string, expectType manifest.Type) error {
 	m, err := store.GetManifest(ctx, key)
 	if err != nil {
 		return err
@@ -128,11 +128,11 @@ func applyManifest(ctx context.Context, db *badger.DB, v *vfs.VFS, store *manife
 	return nil
 }
 
-func openWritable(path string) (*badger.DB, error) {
-	opts := badger.DefaultOptions(path)
+func openWritable(path string) (*zapdb.DB, error) {
+	opts := zapdb.DefaultOptions(path)
 	opts.SyncWrites = true
 	opts.Logger = nil
-	return badger.Open(opts)
+	return zapdb.Open(opts)
 }
 
 func isDirEmpty(path string) (bool, error) {

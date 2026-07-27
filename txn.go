@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-package badger
+package zapdb
 
 import (
 	"bytes"
@@ -17,8 +17,8 @@ import (
 	"sync"
 	"sync/atomic"
 
-	"github.com/luxfi/zapdb/y"
 	"github.com/dgraph-io/ristretto/v2/z"
+	"github.com/luxfi/zapdb/y"
 )
 
 type oracle struct {
@@ -62,8 +62,8 @@ func newOracle(opt Options) *oracle {
 		//
 		// WaterMarks must be 64-bit aligned for atomic package, hence we must use pointers here.
 		// See https://golang.org/pkg/sync/atomic/#pkg-note-BUG.
-		readMark: &y.WaterMark{Name: "badger.PendingReads"},
-		txnMark:  &y.WaterMark{Name: "badger.TxnTimestamp"},
+		readMark: &y.WaterMark{Name: "zapdb.PendingReads"},
+		txnMark:  &y.WaterMark{Name: "zapdb.TxnTimestamp"},
 		closer:   z.NewCloser(2),
 	}
 	orc.readMark.Init(orc.closer)

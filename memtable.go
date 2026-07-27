@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-package badger
+package zapdb
 
 import (
 	"bufio"
@@ -22,10 +22,10 @@ import (
 	"sync"
 	"sync/atomic"
 
+	"github.com/dgraph-io/ristretto/v2/z"
 	"github.com/luxfi/zapdb/pb"
 	"github.com/luxfi/zapdb/skl"
 	"github.com/luxfi/zapdb/y"
-	"github.com/dgraph-io/ristretto/v2/z"
 )
 
 // memTable structure stores a skiplist and a corresponding WAL. Writes to memTable are written

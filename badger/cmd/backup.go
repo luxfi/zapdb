@@ -42,7 +42,7 @@ func init() {
 }
 
 func doBackup(cmd *cobra.Command, args []string) error {
-	opt := badger.DefaultOptions(sstDir).
+	opt := zapdb.DefaultOptions(sstDir).
 		WithValueDir(vlogDir).
 		WithNumVersionsToKeep(math.MaxInt32)
 
@@ -51,7 +51,7 @@ func doBackup(cmd *cobra.Command, args []string) error {
 	}
 
 	// Open DB
-	db, err := badger.Open(opt)
+	db, err := zapdb.Open(opt)
 	if err != nil {
 		return err
 	}

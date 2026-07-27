@@ -22,10 +22,10 @@ import (
 
 	"github.com/spf13/cobra"
 
+	"github.com/dgraph-io/ristretto/v2/z"
 	"github.com/luxfi/zapdb"
 	"github.com/luxfi/zapdb/pb"
 	"github.com/luxfi/zapdb/y"
-	"github.com/dgraph-io/ristretto/v2/z"
 )
 
 var testCmd = &cobra.Command{
@@ -113,7 +113,7 @@ func toSlice(bal uint64) []byte {
 	return []byte(strconv.FormatUint(bal, 10))
 }
 
-func getBalance(txn *badger.Txn, account int) (uint64, error) {
+func getBalance(txn *zapdb.Txn, account int) (uint64, error) {
 	item, err := get(txn, key(account))
 	if err != nil {
 		return 0, err
@@ -127,8 +127,8 @@ func getBalance(txn *badger.Txn, account int) (uint64, error) {
 	return bal, err
 }
 
-func putBalance(txn *badger.Txn, account int, bal uint64) error {
-	return txn.SetEntry(badger.NewEntry(key(account), toSlice(bal)))
+func putBalance(txn *zapdb.Txn, account int, bal uint64) error {
+	return txn.SetEntry(zapdb.NewEntry(key(account), toSlice(bal)))
 }
 
 func min(a, b uint64) uint64 {
@@ -140,8 +140,8 @@ func min(a, b uint64) uint64 {
 
 var errAbandoned = stderrors.New("Transaction abandoned due to insufficient balance")
 
-func moveMoney(db *badger.DB, from, to int) error {
-	return db.Update(func(txn *badger.Txn) error {
+func moveMoney(db *zapdb.DB, from, to int) error {
+	return db.Update(func(txn *zapdb.Txn) error {
 		balf, err := getBalance(txn, from)
 		if err != nil {
 			return err
@@ -188,12 +188,12 @@ var errFailure = errors.New("test failed due to balance mismatch")
 
 // get function will fetch the value for the key "k" either by using the
 // txn.Get API or the iterator.Seek API.
-func get(txn *badger.Txn, k []byte) (*badger.Item, error) {
+func get(txn *zapdb.Txn, k []byte) (*zapdb.Item, error) {
 	if rand.Int()%2 == 0 {
 		return txn.Get(k)
 	}
 
-	iopt := badger.DefaultIteratorOptions
+	iopt := zapdb.DefaultIteratorOptions
 	// PrefectValues is expensive. We don't need it here.
 	iopt.PrefetchValues = false
 	it := txn.NewIterator(iopt)
@@ -202,11 +202,11 @@ func get(txn *badger.Txn, k []byte) (*badger.Item, error) {
 	if it.Valid() {
 		return it.Item(), nil
 	}
-	return nil, badger.ErrKeyNotFound
+	return nil, zapdb.ErrKeyNotFound
 }
 
 // seekTotal retrieves the total of all accounts by seeking for each account key.
-func seekTotal(txn *badger.Txn) ([]account, error) {
+func seekTotal(txn *zapdb.Txn) ([]account, error) {
 	expected := uint64(numAccounts) * initialBal
 	var accounts []account
 
@@ -238,7 +238,7 @@ func seekTotal(txn *badger.Txn) ([]account, error) {
 }
 
 // Range is [lowTs, highTs).
-func findFirstInvalidTxn(db *badger.DB, lowTs, highTs uint64) uint64 {
+func findFirstInvalidTxn(db *zapdb.DB, lowTs, highTs uint64) uint64 {
 	checkAt := func(ts uint64) error {
 		txn := db.NewTransactionAt(ts, false)
 		_, err := seekTotal(txn)
@@ -264,7 +264,7 @@ func findFirstInvalidTxn(db *badger.DB, lowTs, highTs uint64) uint64 {
 	log.Println()
 	log.Printf("Checking. low=%d. high=%d. mid=%d\n", lowTs, highTs, midTs)
 	err := checkAt(midTs)
-	if err == badger.ErrKeyNotFound || err == nil {
+	if err == zapdb.ErrKeyNotFound || err == nil {
 		// If no failure, move to higher ts.
 		return findFirstInvalidTxn(db, midTs+1, highTs)
 	}
@@ -272,7 +272,7 @@ func findFirstInvalidTxn(db *badger.DB, lowTs, highTs uint64) uint64 {
 	return findFirstInvalidTxn(db, lowTs, midTs)
 }
 
-func compareTwo(db *badger.DB, before, after uint64) {
+func compareTwo(db *zapdb.DB, before, after uint64) {
 	fmt.Printf("Comparing @ts=%d with @ts=%d\n", before, after)
 	txn := db.NewTransactionAt(before, false)
 	prev, err := seekTotal(txn)
@@ -298,7 +298,7 @@ func compareTwo(db *badger.DB, before, after uint64) {
 func runDisect(cmd *cobra.Command, args []string) error {
 	// The total did not match up. So, let's disect the DB to find the
 	// transaction which caused the total mismatch.
-	db, err := badger.OpenManaged(badger.DefaultOptions(sstDir).
+	db, err := zapdb.OpenManaged(zapdb.DefaultOptions(sstDir).
 		WithValueDir(vlogDir).
 		WithReadOnly(true).
 		WithEncryptionKey([]byte(encryptionKey)).
@@ -311,7 +311,7 @@ func runDisect(cmd *cobra.Command, args []string) error {
 	var min, max uint64 = math.MaxUint64, 0
 	{
 		txn := db.NewTransactionAt(uint64(math.MaxUint32), false)
-		iopt := badger.DefaultIteratorOptions
+		iopt := zapdb.DefaultIteratorOptions
 		iopt.AllVersions = true
 		itr := txn.NewIterator(iopt)
 		for itr.Rewind(); itr.Valid(); itr.Next() {
@@ -345,7 +345,7 @@ func runTest(cmd *cobra.Command, args []string) error {
 	rand.Seed(time.Now().UnixNano())
 
 	// Open DB
-	opts := badger.DefaultOptions(sstDir).
+	opts := zapdb.DefaultOptions(sstDir).
 		WithValueDir(vlogDir).
 		// Do not GC any versions, because we need them for the disect.
 		WithNumVersionsToKeep(int(math.MaxInt32)).
@@ -353,7 +353,7 @@ func runTest(cmd *cobra.Command, args []string) error {
 		WithIndexCacheSize(1 << 30)
 
 	if verbose {
-		opts = opts.WithLoggingLevel(badger.DEBUG)
+		opts = opts.WithLoggingLevel(zapdb.DEBUG)
 	}
 
 	if encryptionKey != "" {
@@ -363,19 +363,19 @@ func runTest(cmd *cobra.Command, args []string) error {
 		log.Printf("Using encryption key %s\n", encryptionKey)
 	}
 	log.Printf("Opening DB with options: %+v\n", opts)
-	db, err := badger.Open(opts)
+	db, err := zapdb.Open(opts)
 	if err != nil {
 		return err
 	}
 	defer db.Close()
 
-	var tmpDb *badger.DB
-	var subscribeDB *badger.DB
+	var tmpDb *zapdb.DB
+	var subscribeDB *zapdb.DB
 	if checkSubscriber {
 		dir, err := os.MkdirTemp("", "bank_subscribe")
 		y.Check(err)
 
-		subscribeDB, err = badger.Open(badger.DefaultOptions(dir).WithSyncWrites(false))
+		subscribeDB, err = zapdb.Open(zapdb.DefaultOptions(dir).WithSyncWrites(false))
 		if err != nil {
 			return err
 		}
@@ -386,7 +386,7 @@ func runTest(cmd *cobra.Command, args []string) error {
 		dir, err := os.MkdirTemp("", "bank_stream")
 		y.Check(err)
 
-		tmpDb, err = badger.Open(badger.DefaultOptions(dir).WithSyncWrites(false))
+		tmpDb, err = zapdb.Open(zapdb.DefaultOptions(dir).WithSyncWrites(false))
 		if err != nil {
 			return err
 		}
@@ -503,7 +503,7 @@ func runTest(cmd *cobra.Command, args []string) error {
 				y.Check(stream.Orchestrate(context.Background()))
 				y.Check(batch.Flush())
 
-				y.Check(tmpDb.View(func(txn *badger.Txn) error {
+				y.Check(tmpDb.View(func(txn *zapdb.Txn) error {
 					_, err := seekTotal(txn)
 					if err != nil {
 						log.Printf("Error while calculating total in stream: %v", err)
@@ -531,7 +531,7 @@ func runTest(cmd *cobra.Command, args []string) error {
 				return
 			}
 
-			y.Check(db.View(func(txn *badger.Txn) error {
+			y.Check(db.View(func(txn *zapdb.Txn) error {
 				_, err := seekTotal(txn)
 				if err != nil {
 					log.Printf("Error while calculating total: %v", err)
@@ -571,7 +571,7 @@ func runTest(cmd *cobra.Command, args []string) error {
 	if checkSubscriber {
 		cancel()
 		subWg.Wait()
-		y.Check(subscribeDB.View(func(txn *badger.Txn) error {
+		y.Check(subscribeDB.View(func(txn *zapdb.Txn) error {
 			_, err := seekTotal(txn)
 			if err != nil {
 				log.Printf("Error while calculating subscriber DB total: %v", err)

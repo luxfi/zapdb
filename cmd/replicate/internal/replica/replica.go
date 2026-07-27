@@ -9,7 +9,7 @@ import (
 	"github.com/hanzoai/vfs"
 	"github.com/hanzoai/vfs/pkg/backend"
 	log "github.com/luxfi/log"
-	badger "github.com/luxfi/zapdb"
+	zapdb "github.com/luxfi/zapdb"
 
 	"github.com/luxfi/zapdb/cmd/replicate/internal/manifest"
 	"github.com/luxfi/zapdb/cmd/replicate/internal/state"
@@ -27,14 +27,14 @@ type Replica struct {
 
 // Config wires a single replica.
 type Config struct {
-	DBPath              string
-	Network             string         // e.g. "mainnet"
-	VFS                 *vfs.VFS       // backend + crypto
-	Backend             backend.Backend
-	StatePath           string         // override state file path; empty -> derived
-	Interval            time.Duration  // between cycles, default 60s
-	FullSnapshotEvery   time.Duration  // re-snapshot full at this cadence
-	AgeSchemeLabel      string         // recorded in manifests for audit
+	DBPath            string
+	Network           string   // e.g. "mainnet"
+	VFS               *vfs.VFS // backend + crypto
+	Backend           backend.Backend
+	StatePath         string        // override state file path; empty -> derived
+	Interval          time.Duration // between cycles, default 60s
+	FullSnapshotEvery time.Duration // re-snapshot full at this cadence
+	AgeSchemeLabel    string        // recorded in manifests for audit
 }
 
 // New constructs a Replica. The VFS + Backend are taken in pre-built so
@@ -135,7 +135,7 @@ func (r *Replica) cycle(ctx context.Context) error {
 	cw := NewChunkWriter(ctx, r.v)
 	until, err := db.Backup(cw, since)
 	if err != nil {
-		return fmt.Errorf("zapdb-replicate: badger.Backup(since=%d): %w", since, err)
+		return fmt.Errorf("zapdb-replicate: zapdb.Backup(since=%d): %w", since, err)
 	}
 	if err := cw.Close(); err != nil {
 		return fmt.Errorf("zapdb-replicate: chunkwriter close: %w", err)
@@ -207,13 +207,13 @@ func (r *Replica) cycle(ctx context.Context) error {
 // BypassLockGuard so we coexist with a running luxd. We do not use the
 // high-level luxfi/database/zapdb wrapper because it forces SyncWrites
 // + GC goroutines that fight a primary writer.
-func openReadOnly(path string) (*badger.DB, error) {
-	opts := badger.DefaultOptions(path)
+func openReadOnly(path string) (*zapdb.DB, error) {
+	opts := zapdb.DefaultOptions(path)
 	opts.ReadOnly = true
 	opts.BypassLockGuard = true
 	opts.Logger = nil
 	// Smaller caches in the sidecar — luxd already has the big ones.
 	opts.BlockCacheSize = 64 << 20
 	opts.IndexCacheSize = 32 << 20
-	return badger.Open(opts)
+	return zapdb.Open(opts)
 }

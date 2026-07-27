@@ -21,7 +21,7 @@ import (
 	"github.com/hanzoai/vfs/pkg/backend"
 	_ "github.com/hanzoai/vfs/pkg/backend/file"
 	"github.com/luxfi/age"
-	badger "github.com/luxfi/zapdb"
+	zapdb "github.com/luxfi/zapdb"
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/zapdb/cmd/replicate/internal/manifest"
@@ -109,7 +109,7 @@ func TestReplicateRestoreRoundTrip(t *testing.T) {
 	require.NoError(t, dst.Close())
 }
 
-func streamBackup(t *testing.T, ctx context.Context, db *badger.DB, v *vfs.VFS, since uint64) *manifest.Manifest {
+func streamBackup(t *testing.T, ctx context.Context, db *zapdb.DB, v *vfs.VFS, since uint64) *manifest.Manifest {
 	t.Helper()
 	cw := replica.NewChunkWriter(ctx, v)
 	until, err := db.Backup(cw, since)
@@ -132,19 +132,19 @@ func streamBackup(t *testing.T, ctx context.Context, db *badger.DB, v *vfs.VFS, 
 	}
 }
 
-func openDB(t *testing.T, path string) *badger.DB {
+func openDB(t *testing.T, path string) *zapdb.DB {
 	t.Helper()
-	opts := badger.DefaultOptions(path)
+	opts := zapdb.DefaultOptions(path)
 	opts.Logger = nil
 	opts.SyncWrites = false // test perf
-	db, err := badger.Open(opts)
+	db, err := zapdb.Open(opts)
 	require.NoError(t, err)
 	return db
 }
 
-func writeKeys(t *testing.T, db *badger.DB, start, end int) {
+func writeKeys(t *testing.T, db *zapdb.DB, start, end int) {
 	t.Helper()
-	require.NoError(t, db.Update(func(txn *badger.Txn) error {
+	require.NoError(t, db.Update(func(txn *zapdb.Txn) error {
 		for i := start; i < end; i++ {
 			k := []byte(fmt.Sprintf("k%06d", i))
 			v := []byte(fmt.Sprintf("v%06d-padding-to-make-the-stream-non-trivial-and-flush-multiple-pages", i))
@@ -156,9 +156,9 @@ func writeKeys(t *testing.T, db *badger.DB, start, end int) {
 	}))
 }
 
-func verifyKeys(t *testing.T, db *badger.DB, start, end int) {
+func verifyKeys(t *testing.T, db *zapdb.DB, start, end int) {
 	t.Helper()
-	require.NoError(t, db.View(func(txn *badger.Txn) error {
+	require.NoError(t, db.View(func(txn *zapdb.Txn) error {
 		for i := start; i < end; i++ {
 			k := []byte(fmt.Sprintf("k%06d", i))
 			item, err := txn.Get(k)

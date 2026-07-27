@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-package badger
+package zapdb
 
 import (
 	"context"
@@ -16,9 +16,9 @@ import (
 
 	"github.com/stretchr/testify/require"
 
+	"github.com/dgraph-io/ristretto/v2/z"
 	bpb "github.com/luxfi/zapdb/pb"
 	"github.com/luxfi/zapdb/y"
-	"github.com/dgraph-io/ristretto/v2/z"
 )
 
 func keyWithPrefix(prefix string, k int) []byte {

@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-package badger
+package zapdb
 
 // OpenManaged returns a new DB, which allows more control over setting
 // transaction timestamps, aka managed mode.

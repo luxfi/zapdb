@@ -1,4 +1,4 @@
-package badger
+package zapdb
 
 // Throwaway restore benchmark harness (scientist). Env-driven so configs
 // can be swept without recompiling. Run e.g.:

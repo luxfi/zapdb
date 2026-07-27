@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-package badger
+package zapdb
 
 import (
 	"fmt"
@@ -13,10 +13,10 @@ import (
 	"strings"
 	"time"
 
+	"github.com/dgraph-io/ristretto/v2/z"
 	"github.com/luxfi/zapdb/options"
 	"github.com/luxfi/zapdb/table"
 	"github.com/luxfi/zapdb/y"
-	"github.com/dgraph-io/ristretto/v2/z"
 )
 
 // Note: If you add a new option X make sure you also add a WithX method on Options.
@@ -429,7 +429,7 @@ func (opt Options) WithMetricsEnabled(val bool) Options {
 
 // WithLogger returns a new Options value with Logger set to the given value.
 //
-// Logger provides a way to configure what logger each value of badger.DB uses.
+// Logger provides a way to configure what logger each value of zapdb.DB uses.
 //
 // The default value of Logger writes to stderr using the log package from the Go standard library.
 func (opt Options) WithLogger(val Logger) Options {

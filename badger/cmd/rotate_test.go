@@ -33,17 +33,17 @@ func TestRotate(t *testing.T) {
 	defer fp.Close()
 
 	// Opening DB with the encryption key.
-	opts := badger.DefaultOptions(dir)
+	opts := zapdb.DefaultOptions(dir)
 	opts.EncryptionKey = key
 	opts.BlockCacheSize = 1 << 20
 
-	db, err := badger.Open(opts)
+	db, err := zapdb.Open(opts)
 	require.NoError(t, err)
 	// Closing the db.
 	require.NoError(t, db.Close())
 
 	// Opening the db again for the successful open.
-	db, err = badger.Open(opts)
+	db, err = zapdb.Open(opts)
 	require.NoError(t, err)
 	// Closing so that we can open another db
 	require.NoError(t, db.Close())
@@ -62,7 +62,7 @@ func TestRotate(t *testing.T) {
 
 	// Check whether we able to rotate the key with some sample key. We should get mismatch
 	// error.
-	require.EqualError(t, doRotate(nil, []string{}), badger.ErrEncryptionKeyMismatch.Error())
+	require.EqualError(t, doRotate(nil, []string{}), zapdb.ErrEncryptionKeyMismatch.Error())
 
 	// rotating key with proper key.
 	oldKeyPath = fp.Name()
@@ -71,7 +71,7 @@ func TestRotate(t *testing.T) {
 
 	// Checking whether db opens with the new key.
 	opts.EncryptionKey = key2
-	db, err = badger.Open(opts)
+	db, err = zapdb.Open(opts)
 	require.NoError(t, err)
 	require.NoError(t, db.Close())
 
@@ -80,7 +80,7 @@ func TestRotate(t *testing.T) {
 	newKeyPath = ""
 	require.NoError(t, doRotate(nil, []string{}))
 	opts.EncryptionKey = []byte{}
-	db, err = badger.Open(opts)
+	db, err = zapdb.Open(opts)
 	require.NoError(t, err)
 	defer db.Close()
 }
@@ -92,11 +92,11 @@ func TestRotatePlainTextToEncrypted(t *testing.T) {
 	defer os.RemoveAll(dir)
 
 	// Open DB without encryption.
-	opts := badger.DefaultOptions(dir)
-	db, err := badger.Open(opts)
+	opts := zapdb.DefaultOptions(dir)
+	db, err := zapdb.Open(opts)
 	require.NoError(t, err)
 
-	require.NoError(t, db.Update(func(txn *badger.Txn) error {
+	require.NoError(t, db.Update(func(txn *zapdb.Txn) error {
 		return txn.Set([]byte("foo"), []byte("bar"))
 	}))
 
@@ -120,16 +120,16 @@ func TestRotatePlainTextToEncrypted(t *testing.T) {
 
 	// Try opening DB without the key.
 	opts.BlockCacheSize = 1 << 20
-	_, err = badger.Open(opts)
-	require.EqualError(t, err, badger.ErrEncryptionKeyMismatch.Error())
+	_, err = zapdb.Open(opts)
+	require.EqualError(t, err, zapdb.ErrEncryptionKeyMismatch.Error())
 
 	// Check whether db opens with the new key.
 	opts.EncryptionKey = key
-	db, err = badger.Open(opts)
+	db, err = zapdb.Open(opts)
 	require.NoError(t, err)
 
-	require.NoError(t, db.View(func(txn *badger.Txn) error {
-		iopt := badger.DefaultIteratorOptions
+	require.NoError(t, db.View(func(txn *zapdb.Txn) error {
+		iopt := zapdb.DefaultIteratorOptions
 		it := txn.NewIterator(iopt)
 		defer it.Close()
 		count := 0
