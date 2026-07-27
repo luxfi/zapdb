@@ -17,9 +17,9 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/dgraph-io/ristretto/v2/z"
 	"github.com/luxfi/zapdb"
 	"github.com/luxfi/zapdb/y"
-	"github.com/dgraph-io/ristretto/v2/z"
 )
 
 var maxValue int64 = 10000000
@@ -38,8 +38,8 @@ func encoded(i uint64) []byte {
 	return out
 }
 
-func (s *testSuite) write(db *badger.DB) error {
-	return db.Update(func(txn *badger.Txn) error {
+func (s *testSuite) write(db *zapdb.DB) error {
+	return db.Update(func(txn *zapdb.Txn) error {
 		for i := 0; i < 10; i++ {
 			// These keys would be overwritten.
 			keyi := uint64(rand.Int63n(maxValue))
@@ -47,7 +47,7 @@ func (s *testSuite) write(db *badger.DB) error {
 			vali := s.count.Add(1)
 			val := encoded(vali)
 			val = append(val, suffix...)
-			if err := txn.SetEntry(badger.NewEntry(key, val)); err != nil {
+			if err := txn.SetEntry(zapdb.NewEntry(key, val)); err != nil {
 				return err
 			}
 		}
@@ -59,7 +59,7 @@ func (s *testSuite) write(db *badger.DB) error {
 			}
 			key := encoded(keyi)
 			val := append(key, suffix...)
-			if err := txn.SetEntry(badger.NewEntry(key, val)); err != nil {
+			if err := txn.SetEntry(zapdb.NewEntry(key, val)); err != nil {
 				return err
 			}
 		}
@@ -67,12 +67,12 @@ func (s *testSuite) write(db *badger.DB) error {
 	})
 }
 
-func (s *testSuite) read(db *badger.DB) error {
+func (s *testSuite) read(db *zapdb.DB) error {
 	max := int64(s.count.Load())
 	keyi := uint64(rand.Int63n(max))
 	key := encoded(keyi)
 
-	err := db.View(func(txn *badger.Txn) error {
+	err := db.View(func(txn *zapdb.Txn) error {
 		item, err := txn.Get(key)
 		if err != nil {
 			return err
@@ -95,7 +95,7 @@ func (s *testSuite) read(db *badger.DB) error {
 		s.Unlock()
 		return nil
 	})
-	if err == badger.ErrKeyNotFound {
+	if err == zapdb.ErrKeyNotFound {
 		return nil
 	}
 	return err
@@ -107,7 +107,7 @@ func main() {
 	dir := "/mnt/drive/badgertest"
 	os.RemoveAll(dir)
 
-	db, err := badger.Open(badger.DefaultOptions(dir).
+	db, err := zapdb.Open(zapdb.DefaultOptions(dir).
 		WithSyncWrites(false))
 	if err != nil {
 		log.Fatal(err)
@@ -175,8 +175,8 @@ func main() {
 	closer.SignalAndWait()
 	log.Println("Wait done. Now iterating over everything.")
 
-	err = db.View(func(txn *badger.Txn) error {
-		iopts := badger.DefaultIteratorOptions
+	err = db.View(func(txn *zapdb.Txn) error {
+		iopts := zapdb.DefaultIteratorOptions
 		itr := txn.NewIterator(iopts)
 		defer itr.Close()
 

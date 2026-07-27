@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"testing"
 
-	badger "github.com/luxfi/zapdb"
+	zapdb "github.com/luxfi/zapdb"
 	"github.com/stretchr/testify/require"
 )
 
@@ -14,11 +14,11 @@ import (
 // If this fails, the bug is in our use of badger, not in the chunk
 // layer.
 func TestBadgerSmoke(t *testing.T) {
-	srcOpts := badger.DefaultOptions(t.TempDir())
+	srcOpts := zapdb.DefaultOptions(t.TempDir())
 	srcOpts.Logger = nil
-	src, err := badger.Open(srcOpts)
+	src, err := zapdb.Open(srcOpts)
 	require.NoError(t, err)
-	require.NoError(t, src.Update(func(txn *badger.Txn) error {
+	require.NoError(t, src.Update(func(txn *zapdb.Txn) error {
 		for i := 0; i < 10; i++ {
 			if err := txn.Set([]byte{byte('a' + i)}, []byte{byte('A' + i)}); err != nil {
 				return err
@@ -33,13 +33,13 @@ func TestBadgerSmoke(t *testing.T) {
 	require.Greater(t, until, uint64(0))
 	require.NoError(t, src.Close())
 
-	dstOpts := badger.DefaultOptions(t.TempDir())
+	dstOpts := zapdb.DefaultOptions(t.TempDir())
 	dstOpts.Logger = nil
-	dst, err := badger.Open(dstOpts)
+	dst, err := zapdb.Open(dstOpts)
 	require.NoError(t, err)
 	require.NoError(t, dst.Load(&buf, 16))
 
-	require.NoError(t, dst.View(func(txn *badger.Txn) error {
+	require.NoError(t, dst.View(func(txn *zapdb.Txn) error {
 		for i := 0; i < 10; i++ {
 			item, err := txn.Get([]byte{byte('a' + i)})
 			require.NoError(t, err)

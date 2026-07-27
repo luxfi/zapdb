@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-package badger
+package zapdb
 
 import (
 	"bytes"
@@ -24,11 +24,11 @@ import (
 
 	"github.com/stretchr/testify/require"
 
+	"github.com/dgraph-io/ristretto/v2/z"
 	"github.com/luxfi/zapdb/options"
 	"github.com/luxfi/zapdb/pb"
 	"github.com/luxfi/zapdb/table"
 	"github.com/luxfi/zapdb/y"
-	"github.com/dgraph-io/ristretto/v2/z"
 )
 
 func TestTruncateVlogWithClose(t *testing.T) {

@@ -3,15 +3,15 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-package badger
+package zapdb
 
 import (
 	stderrors "errors"
 	"sync"
 	"time"
 
-	"github.com/luxfi/zapdb/y"
 	"github.com/dgraph-io/ristretto/v2/z"
+	"github.com/luxfi/zapdb/y"
 )
 
 // MergeOperator represents a Badger merge operator.

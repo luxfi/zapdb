@@ -49,11 +49,11 @@ func init() {
 }
 
 func pickTableBench(cmd *cobra.Command, args []string) error {
-	opt := badger.DefaultOptions(sstDir).
+	opt := zapdb.DefaultOptions(sstDir).
 		WithValueDir(vlogDir).
 		WithReadOnly(pickOpts.readOnly)
 	fmt.Printf("Opening badger with options = %+v\n", opt)
-	db, err := badger.OpenManaged(opt)
+	db, err := zapdb.OpenManaged(opt)
 	if err != nil {
 		return y.Wrapf(err, "unable to open DB")
 	}
@@ -98,7 +98,7 @@ func BenchmarkPickTables(b *testing.B) {
 	}
 }
 
-// See badger.IteratorOptions (iterator.go)
+// See zapdb.IteratorOptions (iterator.go)
 type iteratorOptions struct {
 	prefixIsKey bool   // If set, use the prefix for bloom filter lookup.
 	Prefix      []byte // Only iterate over this given prefix.
@@ -214,7 +214,7 @@ func genTables(boundaries [][]byte) []*table.Table {
 	return out
 }
 
-func getBoundaries(db *badger.DB) [][]byte {
+func getBoundaries(db *zapdb.DB) [][]byte {
 	fmt.Println("Getting the table boundaries...")
 	tables := db.Tables()
 	out := make([][]byte, 0, 2*len(tables))

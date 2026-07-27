@@ -21,11 +21,11 @@ import (
 	humanize "github.com/dustin/go-humanize"
 	"github.com/spf13/cobra"
 
+	"github.com/dgraph-io/ristretto/v2/z"
 	"github.com/luxfi/zapdb"
 	"github.com/luxfi/zapdb/options"
 	"github.com/luxfi/zapdb/pb"
 	"github.com/luxfi/zapdb/y"
-	"github.com/dgraph-io/ristretto/v2/z"
 )
 
 var writeBenchCmd = &cobra.Command{
@@ -120,7 +120,7 @@ func init() {
 		"If true, the report will include the keys statistics")
 }
 
-func writeRandom(db *badger.DB, num uint64) error {
+func writeRandom(db *zapdb.DB, num uint64) error {
 	value := make([]byte, wo.valSz)
 	y.Check2(rand.Read(value))
 
@@ -135,13 +135,13 @@ func writeRandom(db *badger.DB, num uint64) error {
 		y.Check2(rand.Read(key))
 
 		vsz := rand.Intn(wo.valSz) + 1
-		e := badger.NewEntry(key, value[:vsz])
+		e := zapdb.NewEntry(key, value[:vsz])
 
 		if ttlPeriod != 0 {
 			e.WithTTL(ttlPeriod)
 		}
 		err := batch.SetEntryAt(e, 1)
-		for err == badger.ErrBlockedWrites {
+		for err == zapdb.ErrBlockedWrites {
 			time.Sleep(time.Second)
 			batch = db.NewManagedWriteBatch()
 			err = batch.SetEntryAt(e, 1)
@@ -156,7 +156,7 @@ func writeRandom(db *badger.DB, num uint64) error {
 	return batch.Flush()
 }
 
-func readTest(db *badger.DB, dur time.Duration) {
+func readTest(db *zapdb.DB, dur time.Duration) {
 	now := time.Now()
 	keys, err := getSampleKeys(db, ro.sampleSize)
 	if err != nil {
@@ -184,7 +184,7 @@ func readTest(db *badger.DB, dur time.Duration) {
 	c.SignalAndWait()
 }
 
-func writeSorted(db *badger.DB, num uint64) error {
+func writeSorted(db *zapdb.DB, num uint64) error {
 	value := make([]byte, wo.valSz)
 	y.Check2(rand.Read(value))
 	es := 8 + wo.valSz // key size is 8 bytes and value size is valSz
@@ -210,7 +210,7 @@ func writeSorted(db *badger.DB, num uint64) error {
 				Version:  1,
 				StreamId: streamId,
 			}
-			badger.KVToBuffer(kv, kvBuf)
+			zapdb.KVToBuffer(kv, kvBuf)
 
 			sz += es
 			entriesWritten.Add(1)
@@ -253,7 +253,7 @@ func writeSorted(db *badger.DB, num uint64) error {
 }
 
 func writeBench(cmd *cobra.Command, args []string) error {
-	opt := badger.DefaultOptions(sstDir).
+	opt := zapdb.DefaultOptions(sstDir).
 		WithValueDir(vlogDir).
 		WithSyncWrites(wo.syncWrites).
 		WithCompactL0OnClose(wo.force).
@@ -264,7 +264,7 @@ func writeBench(cmd *cobra.Command, args []string) error {
 		WithValueLogMaxEntries(wo.vlogMaxEntries).
 		WithEncryptionKey([]byte(wo.encryptionKey)).
 		WithDetectConflicts(wo.detectConflicts).
-		WithLoggingLevel(badger.INFO)
+		WithLoggingLevel(zapdb.INFO)
 	if wo.zstdComp {
 		opt = opt.WithCompression(options.ZSTD)
 	}
@@ -274,7 +274,7 @@ func writeBench(cmd *cobra.Command, args []string) error {
 	}
 
 	fmt.Printf("Opening badger with options = %+v\n", opt)
-	db, err := badger.OpenManaged(opt)
+	db, err := zapdb.OpenManaged(opt)
 	if err != nil {
 		return err
 	}
@@ -307,7 +307,7 @@ func writeBench(cmd *cobra.Command, args []string) error {
 	return err
 }
 
-func showKeysStats(db *badger.DB) {
+func showKeysStats(db *zapdb.DB) {
 	var (
 		internalKeyCount uint32
 		invalidKeyCount  uint32
@@ -317,7 +317,7 @@ func showKeysStats(db *badger.DB) {
 	txn := db.NewTransactionAt(math.MaxUint64, false)
 	defer txn.Discard()
 
-	iopt := badger.DefaultIteratorOptions
+	iopt := zapdb.DefaultIteratorOptions
 	iopt.AllVersions = true
 	iopt.InternalAccess = true
 	it := txn.NewIterator(iopt)
@@ -338,7 +338,7 @@ func showKeysStats(db *badger.DB) {
 		validKeyCount, invalidKeyCount, internalKeyCount)
 }
 
-func reportStats(c *z.Closer, db *badger.DB) {
+func reportStats(c *z.Closer, db *zapdb.DB) {
 	defer c.Done()
 
 	t := time.NewTicker(time.Second)
@@ -396,7 +396,7 @@ func reportStats(c *z.Closer, db *badger.DB) {
 	}
 }
 
-func runGC(c *z.Closer, db *badger.DB) {
+func runGC(c *z.Closer, db *zapdb.DB) {
 	defer c.Done()
 	period, err := time.ParseDuration(wo.gcPeriod)
 	y.Check(err)
@@ -420,7 +420,7 @@ func runGC(c *z.Closer, db *badger.DB) {
 	}
 }
 
-func dropAll(c *z.Closer, db *badger.DB) {
+func dropAll(c *z.Closer, db *zapdb.DB) {
 	defer c.Done()
 	dropPeriod, err := time.ParseDuration(wo.dropAllPeriod)
 	y.Check(err)
@@ -437,7 +437,7 @@ func dropAll(c *z.Closer, db *badger.DB) {
 		case <-t.C:
 			fmt.Println("[DropAll] Started")
 			err := db.DropAll()
-			for err == badger.ErrBlockedWrites {
+			for err == zapdb.ErrBlockedWrites {
 				err = db.DropAll()
 				time.Sleep(time.Millisecond * 300)
 			}
@@ -451,7 +451,7 @@ func dropAll(c *z.Closer, db *badger.DB) {
 	}
 }
 
-func dropPrefix(c *z.Closer, db *badger.DB) {
+func dropPrefix(c *z.Closer, db *zapdb.DB) {
 	defer c.Done()
 	dropPeriod, err := time.ParseDuration(wo.dropPrefixPeriod)
 	y.Check(err)

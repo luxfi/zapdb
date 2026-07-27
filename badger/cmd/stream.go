@@ -65,7 +65,7 @@ func stream(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return err
 	}
-	inOpt := badger.DefaultOptions(sstDir).
+	inOpt := zapdb.DefaultOptions(sstDir).
 		WithReadOnly(so.readOnly).
 		WithValueThreshold(1 << 10 /* 1KB */).
 		WithNumVersionsToKeep(so.numVersions).
@@ -78,7 +78,7 @@ func stream(cmd *cobra.Command, args []string) error {
 		return errors.New(
 			"compression value must be one of 0 (disabled), 1 (Snappy), or 2 (ZSTD)")
 	}
-	inDB, err := badger.OpenManaged(inOpt)
+	inDB, err := zapdb.OpenManaged(inOpt)
 	if err != nil {
 		return y.Wrapf(err, "cannot open DB at %s", sstDir)
 	}

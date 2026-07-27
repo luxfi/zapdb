@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-package badger
+package zapdb
 
 // Important: Do NOT import the "testing" package, as otherwise, that
 // will pull in imports into the production class that we do not want.

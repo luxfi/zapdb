@@ -60,7 +60,7 @@ func flatten(cmd *cobra.Command, args []string) error {
 		return errors.New(
 			"compression value must be one of 0 (disabled), 1 (Snappy), or 2 (ZSTD)")
 	}
-	opt := badger.DefaultOptions(sstDir).
+	opt := zapdb.DefaultOptions(sstDir).
 		WithValueDir(vlogDir).
 		WithNumVersionsToKeep(fo.numVersions).
 		WithNumCompactors(0).
@@ -69,7 +69,7 @@ func flatten(cmd *cobra.Command, args []string) error {
 		WithCompression(options.CompressionType(fo.compressionType)).
 		WithEncryptionKey(encKey)
 	fmt.Printf("Opening badger with options = %+v\n", opt)
-	db, err := badger.Open(opt)
+	db, err := zapdb.Open(opt)
 	if err != nil {
 		return err
 	}

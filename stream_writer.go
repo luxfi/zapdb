@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-package badger
+package zapdb
 
 import (
 	"encoding/hex"
@@ -12,10 +12,10 @@ import (
 
 	"github.com/dustin/go-humanize"
 
+	"github.com/dgraph-io/ristretto/v2/z"
 	"github.com/luxfi/zapdb/pb"
 	"github.com/luxfi/zapdb/table"
 	"github.com/luxfi/zapdb/y"
-	"github.com/dgraph-io/ristretto/v2/z"
 )
 
 // StreamWriter is used to write data coming from multiple streams. The streams must not have any

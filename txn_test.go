@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-package badger
+package zapdb
 
 import (
 	"fmt"
@@ -17,8 +17,8 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxfi/zapdb/y"
 	"github.com/dgraph-io/ristretto/v2/z"
+	"github.com/luxfi/zapdb/y"
 )
 
 func TestTxnSimple(t *testing.T) {

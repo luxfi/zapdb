@@ -17,10 +17,10 @@ import (
 	humanize "github.com/dustin/go-humanize"
 	"github.com/spf13/cobra"
 
+	"github.com/dgraph-io/ristretto/v2/z"
 	"github.com/luxfi/zapdb"
 	"github.com/luxfi/zapdb/pb"
 	"github.com/luxfi/zapdb/y"
-	"github.com/dgraph-io/ristretto/v2/z"
 )
 
 var readBenchCmd = &cobra.Command{
@@ -66,7 +66,7 @@ func init() {
 }
 
 // Scan the whole database using the iterators
-func fullScanDB(db *badger.DB) {
+func fullScanDB(db *zapdb.DB) {
 	txn := db.NewTransactionAt(math.MaxUint64, false)
 	defer txn.Discard()
 
@@ -76,7 +76,7 @@ func fullScanDB(db *badger.DB) {
 	c.AddRunning(1)
 	go printStats(c)
 
-	it := txn.NewIterator(badger.DefaultIteratorOptions)
+	it := txn.NewIterator(zapdb.DefaultIteratorOptions)
 	defer it.Close()
 	for it.Rewind(); it.Valid(); it.Next() {
 		i := it.Item()
@@ -93,13 +93,13 @@ func readBench(cmd *cobra.Command, args []string) error {
 		return y.Wrapf(err, "unable to parse duration")
 	}
 	y.AssertTrue(numGoroutines > 0)
-	opt := badger.DefaultOptions(sstDir).
+	opt := zapdb.DefaultOptions(sstDir).
 		WithValueDir(vlogDir).
 		WithReadOnly(ro.readOnly).
 		WithBlockCacheSize(ro.blockCacheSize << 20).
 		WithIndexCacheSize(ro.indexCacheSize << 20)
 	fmt.Printf("Opening badger with options = %+v\n", opt)
-	db, err := badger.OpenManaged(opt)
+	db, err := zapdb.OpenManaged(opt)
 	if err != nil {
 		return y.Wrapf(err, "unable to open DB")
 	}
@@ -140,7 +140,7 @@ func printStats(c *z.Closer) {
 	}
 }
 
-func readKeys(db *badger.DB, c *z.Closer, keys [][]byte) {
+func readKeys(db *zapdb.DB, c *z.Closer, keys [][]byte) {
 	defer c.Done()
 	r := rand.New(rand.NewSource(time.Now().Unix()))
 	for {
@@ -155,9 +155,9 @@ func readKeys(db *badger.DB, c *z.Closer, keys [][]byte) {
 	}
 }
 
-func lookupForKey(db *badger.DB, key []byte) (sz uint64) {
-	err := db.View(func(txn *badger.Txn) error {
-		iopt := badger.DefaultIteratorOptions
+func lookupForKey(db *zapdb.DB, key []byte) (sz uint64) {
+	err := db.View(func(txn *zapdb.Txn) error {
+		iopt := zapdb.DefaultIteratorOptions
 		iopt.AllVersions = true
 		iopt.PrefetchValues = false
 		it := txn.NewKeyIterator(key, iopt)
@@ -179,14 +179,14 @@ func lookupForKey(db *badger.DB, key []byte) (sz uint64) {
 }
 
 // getSampleKeys uses stream framework internally, to get keys in random order.
-func getSampleKeys(db *badger.DB, sampleSize int) ([][]byte, error) {
+func getSampleKeys(db *zapdb.DB, sampleSize int) ([][]byte, error) {
 	var keys [][]byte
 	count := 0
 	stream := db.NewStreamAt(math.MaxUint64)
 
 	// override stream.KeyToList as we only want keys. Also
 	// we can take only first version for the key.
-	stream.KeyToList = func(key []byte, itr *badger.Iterator) (*pb.KVList, error) {
+	stream.KeyToList = func(key []byte, itr *zapdb.Iterator) (*pb.KVList, error) {
 		l := &pb.KVList{}
 		// Since stream framework copies the item's key while calling
 		// KeyToList, we can directly append key to list.

@@ -89,7 +89,7 @@ to the Dgraph team.
 
 func handleInfo(cmd *cobra.Command, args []string) error {
 	cvMode := checksumVerificationMode(opt.checksumVerificationMode)
-	bopt := badger.DefaultOptions(sstDir).
+	bopt := zapdb.DefaultOptions(sstDir).
 		WithValueDir(vlogDir).
 		WithReadOnly(opt.readOnly).
 		WithBlockCacheSize(100 << 20).
@@ -99,7 +99,7 @@ func handleInfo(cmd *cobra.Command, args []string) error {
 		WithExternalMagic(opt.externalMagicVersion)
 
 	if opt.discard {
-		ds, err := badger.InitDiscardStats(bopt)
+		ds, err := zapdb.InitDiscardStats(bopt)
 		y.Check(err)
 		ds.Iterate(func(fid, stats uint64) {
 			fmt.Printf("Value Log Fid: %5d. Stats: %10d [ %s ]\n",
@@ -114,7 +114,7 @@ func handleInfo(cmd *cobra.Command, args []string) error {
 	}
 
 	// Open DB
-	db, err := badger.Open(bopt)
+	db, err := zapdb.Open(bopt)
 	if err != nil {
 		return y.Wrap(err, "failed to open database")
 	}
@@ -146,14 +146,14 @@ func handleInfo(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
-func showKeys(db *badger.DB, prefix []byte) error {
+func showKeys(db *zapdb.DB, prefix []byte) error {
 	if len(prefix) > 0 {
 		fmt.Printf("Only choosing keys with prefix: \n%s", hex.Dump(prefix))
 	}
 	txn := db.NewTransaction(false)
 	defer txn.Discard()
 
-	iopt := badger.DefaultIteratorOptions
+	iopt := zapdb.DefaultIteratorOptions
 	iopt.Prefix = prefix
 	iopt.PrefetchValues = false
 	iopt.AllVersions = opt.keyHistory
@@ -180,7 +180,7 @@ func showKeys(db *badger.DB, prefix []byte) error {
 
 }
 
-func lookup(db *badger.DB) error {
+func lookup(db *zapdb.DB) error {
 	txn := db.NewTransaction(false)
 	defer txn.Discard()
 
@@ -189,7 +189,7 @@ func lookup(db *badger.DB) error {
 		return y.Wrapf(err, "failed to decode key: %q", opt.keyLookup)
 	}
 
-	iopts := badger.DefaultIteratorOptions
+	iopts := zapdb.DefaultIteratorOptions
 	iopts.AllVersions = opt.keyHistory
 	iopts.PrefetchValues = opt.keyHistory
 	itr := txn.NewKeyIterator(key, iopts)
@@ -224,7 +224,7 @@ func lookup(db *badger.DB) error {
 	return nil
 }
 
-func printKeyReturnSize(item *badger.Item, showValue bool) (int64, error) {
+func printKeyReturnSize(item *zapdb.Item, showValue bool) (int64, error) {
 	var buf bytes.Buffer
 	fmt.Fprintf(&buf, "Key: %x\tversion: %d", item.Key(), item.Version())
 	size := item.EstimatedSize()
@@ -267,7 +267,7 @@ func getInfo(fileInfos []os.FileInfo, tid uint64) int64 {
 	return 0
 }
 
-func tableInfo(dir, valueDir string, db *badger.DB) {
+func tableInfo(dir, valueDir string, db *zapdb.DB) {
 	// we want all tables with keys count here.
 	tables := db.Tables()
 	fileInfos, err := readDir(dir)
@@ -320,14 +320,14 @@ func readDir(dir string) ([]fs.FileInfo, error) {
 	return infos, err
 }
 
-func printInfo(dir, valueDir string, bopt badger.Options) error {
+func printInfo(dir, valueDir string, bopt zapdb.Options) error {
 	if dir == "" {
 		return fmt.Errorf("--dir not supplied")
 	}
 	if valueDir == "" {
 		valueDir = dir
 	}
-	fp, err := os.Open(filepath.Join(dir, badger.ManifestFilename))
+	fp, err := os.Open(filepath.Join(dir, zapdb.ManifestFilename))
 	if err != nil {
 		return err
 	}
@@ -336,7 +336,7 @@ func printInfo(dir, valueDir string, bopt badger.Options) error {
 			fp.Close()
 		}
 	}()
-	manifest, truncOffset, err := badger.ReplayManifestFile(fp, opt.externalMagicVersion, bopt)
+	manifest, truncOffset, err := zapdb.ReplayManifestFile(fp, opt.externalMagicVersion, bopt)
 	if err != nil {
 		return err
 	}
@@ -358,9 +358,9 @@ func printInfo(dir, valueDir string, bopt badger.Options) error {
 	fmt.Println()
 	var baseTime time.Time
 	manifestTruncated := false
-	manifestInfo, ok := fileinfoByName[badger.ManifestFilename]
+	manifestInfo, ok := fileinfoByName[zapdb.ManifestFilename]
 	if ok {
-		fileinfoMarked[badger.ManifestFilename] = true
+		fileinfoMarked[zapdb.ManifestFilename] = true
 		truncatedString := ""
 		if truncOffset != manifestInfo.Size() {
 			truncatedString = fmt.Sprintf(" [TRUNCATED to %d]", truncOffset)

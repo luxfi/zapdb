@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-package badger
+package zapdb
 
 import (
 	"encoding/binary"
@@ -12,8 +12,8 @@ import (
 	"sort"
 	"sync"
 
-	"github.com/luxfi/zapdb/y"
 	"github.com/dgraph-io/ristretto/v2/z"
+	"github.com/luxfi/zapdb/y"
 )
 
 // discardStats keeps track of the amount of data that could be discarded for
