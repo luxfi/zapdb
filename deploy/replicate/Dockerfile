@@ -1,6 +1,7 @@
 # Build context must be the repo root (luxfi/zapdb).
 # docker build -t zapdb-replicate -f deploy/replicate/Dockerfile .
-FROM golang:1.26.4-bookworm AS build
+FROM golang:1.26.5-bookworm AS build
+ENV GOTOOLCHAIN=auto
 
 WORKDIR /src
 COPY go.mod go.sum ./
