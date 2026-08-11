@@ -8,7 +8,7 @@ require (
 	github.com/dustin/go-humanize v1.0.1
 	github.com/google/flatbuffers v25.12.19+incompatible
 	github.com/hanzoai/vfs v0.4.3
-	github.com/hanzos3/go v1.0.1
+	github.com/hanzos3/go v1.0.2
 	github.com/klauspost/compress v1.18.5
 	github.com/luxfi/age v1.6.0
 	github.com/luxfi/log v1.4.3
