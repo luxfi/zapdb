@@ -206,8 +206,28 @@ func (mt *memTable) UpdateSkipList() error {
 	if err != nil {
 		return y.Wrapf(err, "while iterating wal: %s", mt.wal.Fd.Name())
 	}
-	if endOff < mt.wal.size.Load() && mt.opt.ReadOnly {
+	// A log that ends before its file does means one of two different things,
+	// and which one depends on whether anybody else is writing.
+	//
+	// Opened read-only and alone, it means the tail is damaged: the writer that
+	// left it is gone, nothing more is coming, and continuing would silently
+	// drop whatever the damaged region held. Refusing is right.
+	//
+	// Opened as a follower, it means the writer is part-way through an append.
+	// That is the ordinary condition of a live log, not a fault, and it will be
+	// a different length a moment later. A follower reads up to where the log
+	// is presently coherent and stops there — which is what `iterate` has
+	// already given us — and treating that as corruption would make a follower
+	// refuse every healthy store it was pointed at.
+	if endOff < mt.wal.size.Load() && mt.opt.ReadOnly && !mt.opt.Follower {
 		return y.Wrapf(ErrTruncateNeeded, "end offset: %d < size: %d", endOff, mt.wal.size.Load())
+	}
+	// The truncation that follows a replay is how a writer discards a damaged
+	// tail. A follower has no business shortening a log it does not own — the
+	// bytes past `endOff` are the writer's next append, not damage — so it
+	// stops at the coherent end and leaves the file alone.
+	if mt.opt.Follower {
+		return nil
 	}
 	return mt.wal.Truncate(int64(endOff))
 }

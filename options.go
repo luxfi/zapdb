@@ -90,6 +90,26 @@ type Options struct {
 	// the same directory. Use this options with caution.
 	BypassLockGuard bool
 
+	// Follower opens a store another process is writing, without writing to it.
+	//
+	// The ordinary read-only mode cannot do this. It takes a shared lock, the
+	// writer holds an exclusive one, and the two are mutually exclusive — so a
+	// reader is refused for as long as a writer is live, which is the whole
+	// period a reader is wanted. BypassLockGuard removes the refusal but also
+	// removes the protection against a SECOND WRITER, and nothing then tells
+	// the safe arrangement from the unsafe one.
+	//
+	// This says which arrangement it is. A follower takes no lock of its own —
+	// it cannot, and the exclusive lock is what it is deferring to — and in
+	// exchange it promises what a follower must promise: it writes nothing,
+	// creates nothing, and runs no compaction. Two writers remain impossible,
+	// because a writer still takes the exclusive lock and still finds it held.
+	//
+	// A follower's view of a store an active writer is compacting is only
+	// coherent under a pinned manifest generation. LP-3701 specifies that; this
+	// option is the half that lets the store be opened at all.
+	Follower bool
+
 	// ChecksumVerificationMode decides when db should verify checksums for SSTable blocks.
 	ChecksumVerificationMode options.ChecksumVerificationMode
 
@@ -725,6 +745,22 @@ func (opt Options) WithZSTDCompressionLevel(cLevel int) Options {
 // write to the same data directory. Use this option with caution.
 //
 // The default value of BypassLockGuard is false.
+// WithFollower returns a new Options value with Follower set to the given
+// value.
+//
+// A follower reads a store another process is writing and writes nothing to it:
+// no key, no file, no compaction, not the directory it would have created had
+// the path been empty. It takes no directory lock, deferring to the writer's,
+// so a second WRITER still meets that lock and still fails — which is what
+// separates this from bypassing the lock guard outright.
+//
+// It implies ReadOnly. What a follower sees while the writer compacts is only
+// coherent under a pinned manifest generation; see LP-3701.
+func (opt Options) WithFollower(b bool) Options {
+	opt.Follower = b
+	return opt
+}
+
 func (opt Options) WithBypassLockGuard(b bool) Options {
 	opt.BypassLockGuard = b
 	return opt
