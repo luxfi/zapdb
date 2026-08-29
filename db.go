@@ -161,6 +161,15 @@ func checkAndSetOptions(opt *Options) error {
 		return ErrValueLogSize
 	}
 
+	// A follower is a read-only store plus a promise about the lock. Deriving
+	// the flag here rather than asking callers to set both is what keeps the
+	// ten places that already ask `if !ReadOnly` correct without touching any
+	// of them — and a follower that missed one of those would be a follower
+	// that writes to somebody else's directory.
+	if opt.Follower {
+		opt.ReadOnly = true
+	}
+
 	if opt.ReadOnly {
 		// Do not perform compaction in read only mode.
 		opt.CompactL0OnClose = false
@@ -184,11 +193,23 @@ func Open(opt Options) (*DB, error) {
 	// We don't have any directories/files in InMemory mode so we don't need to acquire
 	// any locks on them.
 	if !opt.InMemory {
-		if err := createDirs(opt); err != nil {
+		// A follower does not create what it finds missing. The directory
+		// belongs to the writer, and a follower that makes a file in it has
+		// already made the writer's store something the writer did not write.
+		// An absent directory is a misconfiguration a follower should report
+		// rather than paper over by inventing an empty store.
+		if opt.Follower {
+			if _, err := os.Stat(opt.Dir); err != nil {
+				return nil, y.Wrapf(err, "follower: %q is not there to follow", opt.Dir)
+			}
+		} else if err := createDirs(opt); err != nil {
 			return nil, err
 		}
 		var err error
-		if !opt.BypassLockGuard {
+		// A follower takes no lock. The writer's exclusive lock is what it is
+		// deferring to, and a second writer still meets that lock and still
+		// fails — which is the protection BypassLockGuard would have removed.
+		if !opt.BypassLockGuard && !opt.Follower {
 			dirLockGuard, err = acquireDirectoryLock(opt.Dir, lockFile, opt.ReadOnly)
 			if err != nil {
 				return nil, err
